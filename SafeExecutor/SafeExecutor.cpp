@@ -1,6 +1,4 @@
-﻿// SafeExecutor.cpp : このファイルには 'main' 関数が含まれています。プログラム実行の開始と終了がそこで行われます。
-
-#include <iostream>
+﻿#include <iostream>
 #include <Windows.h>
 #include "Shlwapi.h"
 #pragma comment(lib, "shlwapi.lib")
@@ -32,7 +30,8 @@ int main(int argc, char* argv[]) {
                 WriteProcessMemory(pi.hProcess, allocMem, dllpath, dllpathSize, NULL);
 
                 CreateRemoteThread(pi.hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)lib, allocMem, 0, NULL);
-
+                Sleep(200);  // フックの処理が終るまで待つ（意味があるのかは不明）
+                
                 ResumeThread(pi.hThread);
             }
         }

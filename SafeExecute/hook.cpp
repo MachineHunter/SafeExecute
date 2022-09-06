@@ -1,35 +1,45 @@
 #include "pch.h"
 #include "hook.h"
 
+
+// ================================== フックを追加する場合は、ここから =====================================================
+
+// 1: WindowsAPIの関数型の定義
 typedef int(WINAPI* MESSAGEBOXA)(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType);
 typedef void(WINAPI* SLEEP)(DWORD dwMilliseconds);
 MESSAGEBOXA orig_MessageBoxA;
 SLEEP orig_Sleep;
 
 
+// 2: フック関数の容易（ココに悪性処理検出のロジックを書く）
 int WINAPI MessageBoxA_Hook (
     HWND    hWnd,
     LPCTSTR lpText,
     LPCTSTR lpCaption,
     UINT    uType
 ) {
-    Beep(750, 300);
+    MessageBoxA(NULL, "Hooked MessageBoxA", "debug", MB_OK);
     return orig_MessageBoxA(hWnd, lpText, lpCaption, uType);
 }
 
 void WINAPI Sleep_Hook(
     DWORD dwMilliseconds
 ) {
-    Beep(400, 300);
+    MessageBoxA(NULL, "Hooked Sleep", "debug", MB_OK);
     return orig_Sleep(dwMilliseconds);
 }
 
-void Hook() {
-    HookList hooklist = {
+
+// 3: フックする全てのWindowsAPIのリスト
+HookList hooklist = {
         HookFunc("user32.dll", "MessageBoxA", (void**)&orig_MessageBoxA, (void*)MessageBoxA_Hook),
         HookFunc("kernel32.dll", "Sleep", (void**)&orig_Sleep, (void*)Sleep_Hook)
-    };
+};
 
+// ================================== ここまでを編集してください！ =====================================================
+
+
+void Hook() {
     for (HookFunc hookfunc : hooklist) {
         ULONG cbSize = 0;
         HANDLE hModule = GetModuleHandleA(0);

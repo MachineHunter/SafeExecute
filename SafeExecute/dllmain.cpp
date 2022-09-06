@@ -3,7 +3,6 @@
 
 DWORD WINAPI ThreadMain(LPVOID params) {
     Hook();
-    while (1);
     return 0;
 }
 
