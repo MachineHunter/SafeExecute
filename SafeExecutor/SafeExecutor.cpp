@@ -8,7 +8,7 @@ using namespace std;
 int main(int argc, char* argv[]) {
     BOOL res;
 
-    if (argc == 3) {
+    if (argc > 2) {
         char* dllpath  = argv[1];
         char* filename = argv[2];
 
@@ -20,7 +20,15 @@ int main(int argc, char* argv[]) {
                 memset(&pi, 0, sizeof(pi));
                 si.cb = sizeof(si);
 
-                res = CreateProcessA(NULL, filename, NULL, NULL, 0, CREATE_SUSPENDED, NULL, NULL, &si, &pi);
+                char cmd[MAX_PATH * 6];
+                memset(cmd, 0, sizeof(cmd));
+                strcat_s(cmd, filename);
+                for (int i = 3; i < argc; i++) {
+                    strcat_s(cmd, " ");
+                    strcat_s(cmd, argv[i]);
+                }
+
+                res = CreateProcessA(NULL, cmd, NULL, NULL, 0, CREATE_SUSPENDED, NULL, NULL, &si, &pi);
                 if (!res) cout << "Error: failed to execute executable" << endl;
 
                 // dll injection
@@ -39,5 +47,5 @@ int main(int argc, char* argv[]) {
             cout << "Error: Invalid executable path" << endl;
     }
     else
-        cout << "Usage:" << endl << "SafeExecutor.exe <path-to-SafeExecute.dll> <path-to-your-executable>" << endl;
+        cout << "Usage:" << endl << "SafeExecutor.exe <path-to-SafeExecute.dll> <path-to-your-executable> <args>" << endl;
 }
