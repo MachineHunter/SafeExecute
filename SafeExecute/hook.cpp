@@ -36,12 +36,11 @@ bool WINAPI SetFileAttributesA_FileAttributeHidden_Hook(
     LPCSTR lpFileName,
     DWORD dwFileAttributes
 ) { 
-    char init_char[MAX_PATH] = {}; // LPSTR の初期化用
-    LPSTR oneself_file_path = init_char; // 実行ファイル（自分自身）のフルパスを格納
+    char oneself_file_path[MAX_PATH] = {}; // 実行ファイル（自分自身）のフルパスを格納
 
     if (0 != GetModuleFileNameA(NULL, oneself_file_path, MAX_PATH)) { // 自分自身のファイルパスの取得
         // 第一引数: 自分自身のファイルパス, 第二引数: FILE_ATTRIBUTE_HIDDEN の場合 ExitProcess
-        if ((strcmp(lpFileName, oneself_file_path) == 0) && (dwFileAttributes == FILE_ATTRIBUTE_HIDDEN)) {
+        if ((strcmp(lpFileName, oneself_file_path) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
             ExitProcess(1);
         }
     }
