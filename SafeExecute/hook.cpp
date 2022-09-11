@@ -7,8 +7,10 @@
 // 1: WindowsAPIの関数型の定義
 typedef int(WINAPI* MESSAGEBOXA)(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType);
 typedef void(WINAPI* SLEEP)(DWORD dwMilliseconds);
+typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttributes);
 MESSAGEBOXA orig_MessageBoxA;
 SLEEP orig_Sleep;
+SETFILEATTRIBUTESA orig_SetFileAttributesA;
 
 
 // 2: フック関数の容易（ココに悪性処理検出のロジックを書く）
@@ -29,11 +31,28 @@ void WINAPI Sleep_Hook(
     return orig_Sleep(dwMilliseconds);
 }
 
+// FileAttributesA_FileAttributeHidden_Hook 自分自身を隠しファイル化する挙動の検知
+bool WINAPI SetFileAttributesA_FileAttributeHidden_Hook(
+    LPCSTR lpFileName,
+    DWORD dwFileAttributes
+) { 
+    char oneself_file_path[MAX_PATH] = {}; // 実行ファイル（自分自身）のフルパスを格納
+
+    if (0 != GetModuleFileNameA(NULL, oneself_file_path, MAX_PATH)) { // 自分自身のファイルパスの取得
+        // 第一引数: 自分自身のファイルパス, 第二引数: FILE_ATTRIBUTE_HIDDEN の場合 ExitProcess
+        if ((strcmp(lpFileName, oneself_file_path) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
+            ExitProcess(1);
+        }
+    }
+    return orig_SetFileAttributesA(lpFileName, dwFileAttributes);   
+}
+
 
 // 3: フックする全てのWindowsAPIのリスト
 HookList hooklist = {
         HookFunc("user32.dll", "MessageBoxA", (void**)&orig_MessageBoxA, (void*)MessageBoxA_Hook),
-        HookFunc("kernel32.dll", "Sleep", (void**)&orig_Sleep, (void*)Sleep_Hook)
+        HookFunc("kernel32.dll", "Sleep", (void**)&orig_Sleep, (void*)Sleep_Hook),
+        HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_FileAttributeHidden_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================
