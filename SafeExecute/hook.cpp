@@ -12,7 +12,7 @@ typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
 MESSAGEBOXA orig_MessageBoxA;
 SLEEP orig_Sleep;
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
-ISDEBUGGERPRESENT orig_IsDebuggerPresent; //検知したら元のプロセスに戻るからこれいらない？
+ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
@@ -54,7 +54,7 @@ bool WINAPI IsDebuggerPresent_Hook() {
 
     MessageBoxA(NULL, "Hooked IsDebuggerPresent", "debug", MB_OK);
     ExitProcess(1);
-    return false; //ここの返り値適当に設定したんですけどまずいですかね？
+    return orig_IsDebuggerPresent();
 }
 
 // 3: フックする全てのWindowsAPIのリスト
