@@ -8,12 +8,14 @@
 typedef int(WINAPI* MESSAGEBOXA)(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType);
 typedef void(WINAPI* SLEEP)(DWORD dwMilliseconds);
 typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttributes);
+typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
 MESSAGEBOXA orig_MessageBoxA;
 SLEEP orig_Sleep;
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
+ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 
 
-// 2: フック関数の容易（ココに悪性処理検出のロジックを書く）
+// 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
 int WINAPI MessageBoxA_Hook (
     HWND    hWnd,
     LPCTSTR lpText,
@@ -47,12 +49,20 @@ bool WINAPI SetFileAttributesA_FileAttributeHidden_Hook(
     return orig_SetFileAttributesA(lpFileName, dwFileAttributes);   
 }
 
+// IsDebuggerPresent_Hook デバッガの存在を確認している挙動の検知
+bool WINAPI IsDebuggerPresent_Hook() {
+
+    MessageBoxA(NULL, "Hooked IsDebuggerPresent", "debug", MB_OK);
+    ExitProcess(1);
+    return orig_IsDebuggerPresent();
+}
 
 // 3: フックする全てのWindowsAPIのリスト
 HookList hooklist = {
         HookFunc("user32.dll", "MessageBoxA", (void**)&orig_MessageBoxA, (void*)MessageBoxA_Hook),
         HookFunc("kernel32.dll", "Sleep", (void**)&orig_Sleep, (void*)Sleep_Hook),
-        HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_FileAttributeHidden_Hook)
+        HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_FileAttributeHidden_Hook),
+        HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================
