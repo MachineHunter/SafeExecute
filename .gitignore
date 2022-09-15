@@ -398,4 +398,4 @@ FodyWeavers.xsd
 *.sln.iml
 
 # ignore logs
-logs/
+logs/log.csv
