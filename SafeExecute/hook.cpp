@@ -5,43 +5,21 @@
 // ================================== フックを追加する場合は、ここから =====================================================
 
 // 1: WindowsAPIの関数型の定義
-typedef int(WINAPI* MESSAGEBOXA)(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType);
-typedef void(WINAPI* SLEEP)(DWORD dwMilliseconds);
 typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttributes);
 typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
-MESSAGEBOXA orig_MessageBoxA;
-SLEEP orig_Sleep;
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
-int WINAPI MessageBoxA_Hook (
-    HWND    hWnd,
-    LPCTSTR lpText,
-    LPCTSTR lpCaption,
-    UINT    uType
-) {
-    MessageBoxA(NULL, "Hooked MessageBoxA", "debug", MB_OK);
-    return orig_MessageBoxA(hWnd, lpText, lpCaption, uType);
-}
-
-void WINAPI Sleep_Hook(
-    DWORD dwMilliseconds
-) {
-    MessageBoxA(NULL, "Hooked Sleep", "debug", MB_OK);
-    return orig_Sleep(dwMilliseconds);
-}
-
-// FileAttributesA_FileAttributeHidden_Hook 自分自身を隠しファイル化する挙動の検知
 bool WINAPI SetFileAttributesA_Hook(
     LPCSTR lpFileName,
     DWORD dwFileAttributes
 ) { 
-    char oneself_file_path[MAX_PATH] = {}; // 実行ファイル（自分自身）のフルパスを格納
+    char oneself_file_path[MAX_PATH] = {};
 
-    if (0 != GetModuleFileNameA(NULL, oneself_file_path, MAX_PATH)) { // 自分自身のファイルパスの取得
-        // 第一引数: 自分自身のファイルパス, 第二引数: FILE_ATTRIBUTE_HIDDEN の場合 ExitProcess
+    // 自分自身を隠しファイル化する挙動の検知
+    if (0 != GetModuleFileNameA(NULL, oneself_file_path, MAX_PATH)) {
         if ((strcmp(lpFileName, oneself_file_path) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
             ExitProcess(1);
         }
@@ -49,17 +27,16 @@ bool WINAPI SetFileAttributesA_Hook(
     return orig_SetFileAttributesA(lpFileName, dwFileAttributes);   
 }
 
-// IsDebuggerPresent_Hook デバッガの存在を確認している挙動の検知
 bool WINAPI IsDebuggerPresent_Hook() {
+    // IsDebuggerPresent_Hook デバッガの存在を確認している挙動の検知
     MessageBoxA(NULL, "Hooked IsDebuggerPresent", "debug", MB_OK);
     ExitProcess(1);
     return orig_IsDebuggerPresent();
 }
 
+
 // 3: フックする全てのWindowsAPIのリスト
 HookList hooklist = {
-        HookFunc("user32.dll", "MessageBoxA", (void**)&orig_MessageBoxA, (void*)MessageBoxA_Hook),
-        HookFunc("kernel32.dll", "Sleep", (void**)&orig_Sleep, (void*)Sleep_Hook),
         HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
         HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook)
 };
