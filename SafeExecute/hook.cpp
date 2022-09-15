@@ -34,7 +34,7 @@ void WINAPI Sleep_Hook(
 }
 
 // FileAttributesA_FileAttributeHidden_Hook 自分自身を隠しファイル化する挙動の検知
-bool WINAPI SetFileAttributesA_FileAttributeHidden_Hook(
+bool WINAPI SetFileAttributesA_Hook(
     LPCSTR lpFileName,
     DWORD dwFileAttributes
 ) { 
@@ -51,7 +51,6 @@ bool WINAPI SetFileAttributesA_FileAttributeHidden_Hook(
 
 // IsDebuggerPresent_Hook デバッガの存在を確認している挙動の検知
 bool WINAPI IsDebuggerPresent_Hook() {
-
     MessageBoxA(NULL, "Hooked IsDebuggerPresent", "debug", MB_OK);
     ExitProcess(1);
     return orig_IsDebuggerPresent();
@@ -61,7 +60,7 @@ bool WINAPI IsDebuggerPresent_Hook() {
 HookList hooklist = {
         HookFunc("user32.dll", "MessageBoxA", (void**)&orig_MessageBoxA, (void*)MessageBoxA_Hook),
         HookFunc("kernel32.dll", "Sleep", (void**)&orig_Sleep, (void*)Sleep_Hook),
-        HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_FileAttributeHidden_Hook),
+        HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
         HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook)
 };
 
