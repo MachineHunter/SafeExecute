@@ -12,22 +12,23 @@ ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
+// （※ 関数冒頭で PreHook() を必ず呼んで欲しいです...!）
 bool WINAPI SetFileAttributesA_Hook(
     LPCSTR lpFileName,
     DWORD dwFileAttributes
 ) { 
-    char oneself_file_path[MAX_PATH] = {};
+    PreHook("SetFileAttributesA");
 
     // 自分自身を隠しファイル化する挙動の検知
-    if (0 != GetModuleFileNameA(NULL, oneself_file_path, MAX_PATH)) {
-        if ((strcmp(lpFileName, oneself_file_path) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
-            ExitProcess(1);
-        }
+    if ((strcmp(lpFileName, processPath) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
+        ExitProcess(1);
     }
     return orig_SetFileAttributesA(lpFileName, dwFileAttributes);   
 }
 
 bool WINAPI IsDebuggerPresent_Hook() {
+    PreHook("IsDebuggerPresent");
+
     // IsDebuggerPresent_Hook デバッガの存在を確認している挙動の検知
     MessageBoxA(NULL, "Hooked IsDebuggerPresent", "debug", MB_OK);
     ExitProcess(1);
