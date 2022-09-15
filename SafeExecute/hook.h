@@ -1,8 +1,11 @@
 #pragma once
 #include <vector>
 #include "mydebug.h"
+#include "prehook.h"
 #include <Dbghelp.h>
 #pragma comment(lib, "Dbghelp")
+
+extern char processPath[MAX_PATH];
 
 typedef struct HookFunc {
     const char* dllname;

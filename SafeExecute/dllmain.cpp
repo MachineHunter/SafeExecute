@@ -1,7 +1,10 @@
 ﻿#include "pch.h"
 #include "hook.h"
 
+char processPath[MAX_PATH];
+
 DWORD WINAPI ThreadMain(LPVOID params) {
+    GetModuleFileNameA(NULL, processPath, MAX_PATH);
     Hook();
     return 0;
 }
