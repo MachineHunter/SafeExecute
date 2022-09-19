@@ -4,7 +4,7 @@
 
 // ================================== フックを追加する場合は、ここから =====================================================
 
-// 1: WindowsAPIの関数型の定義
+// 1: WindowsAPIの関?型の定義
 typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttributes);
 typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
 typedef HINTERNET (WINAPI* INTERNETOPENURLA)(
