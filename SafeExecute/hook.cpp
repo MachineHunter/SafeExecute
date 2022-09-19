@@ -2,7 +2,7 @@
 #include "hook.h"
 #include <wininet.h>
 
-// ================================== フックを追加する場?は、ここから =====================================================
+// ================================== フックを追加する場合は、ここから =====================================================
 
 // 1: WindowsAPIの関?型の定義
 typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttributes);
@@ -19,15 +19,15 @@ SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 INTERNETOPENURLA orig_InternetOpenUrlA;
 
-// 2: フック関?の用意（ココに悪性???出の?ジックを?く）
-// （※ 関?冒頭で PreHook() を必ず呼んで欲しいです...!）
+// 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
+// （※ 関数冒頭で PreHook() を必ず呼んで欲しいです...!）
 bool WINAPI SetFileAttributesA_Hook(
     LPCSTR lpFileName,
     DWORD dwFileAttributes
 ) { 
     PreHook("SetFileAttributesA");
 
-    // 自分自身を隠しファイ?化する?動の?知
+    // 自分自身を隠しファイル化する挙動の検知
     if ((strcmp(lpFileName, processPath) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
         ExitProcess(1);
     }
@@ -37,7 +37,7 @@ bool WINAPI SetFileAttributesA_Hook(
 bool WINAPI IsDebuggerPresent_Hook() {
     PreHook("IsDebuggerPresent");
 
-    // IsDebuggerPresent_Hook デバッガの存在を確認している?動の?知
+    // IsDebuggerPresent_Hook デバッガの存在を確認している挙動の検知
     MessageBoxA(NULL, "Hooked IsDebuggerPresent", "debug", MB_OK);
     ExitProcess(1);
     return orig_IsDebuggerPresent();
@@ -61,7 +61,7 @@ HINTERNET InternetOpenUrlA_Hook(
 }
 
 
-// 3: フックする全てのWindowsAPIの?スト
+// 3: フックする全てのWindowsAPIのリスト
 HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
         HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook),
