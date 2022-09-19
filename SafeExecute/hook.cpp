@@ -43,14 +43,7 @@ bool WINAPI IsDebuggerPresent_Hook() {
     return orig_IsDebuggerPresent();
 }
 
-HINTERNET InternetOpenUrlA_Hook(
-	HINTERNET hInternet,
-	LPCSTR    lpszUrl,
-	LPCSTR    lpszHeaders,
-	DWORD     dwHeadersLength,
-	DWORD     dwFlags,
-	DWORD_PTR dwContext
-) {
+HINTERNET InternetOpenUrlA_Hook(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength,	DWORD dwFlags, DWORD_PTR dwContext) {
     PreHook("InternetOpenUrlA");
 
     // InternetOpenUrlA_Hook
