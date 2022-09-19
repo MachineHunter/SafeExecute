@@ -11,7 +11,7 @@ typedef LSTATUS(WINAPI* REGCREATEKEYEXA)(HKEY hKey, LPCSTR lpSubKey, DWORD Reser
 
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
-REGCREATEKEYEXA org_RegCreateKeyExA;
+REGCREATEKEYEXA orig_RegCreateKeyExA;
 
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
@@ -50,13 +50,12 @@ LSTATUS WINAPI RegCreateKeyExA_Hook(
     LPDWORD lpdwDisposition
 ) {
     PreHook("RegCreateKeyExA");
-
     // スタートアップレジストリへの登録の検知
-    if (strcmp(lpSubKey, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) {
+    if ((strcmp(lpSubKey, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)){
         ExitProcess(1);
     }
 
-    return org_RegCreateKeyExA(hkey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes, phkResult, lpdwDisposition);
+    return orig_RegCreateKeyExA(hkey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes, phkResult, lpdwDisposition);
 }
 
 
@@ -64,7 +63,7 @@ LSTATUS WINAPI RegCreateKeyExA_Hook(
 HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
         HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook),
-        HookFunc("advapi32.dll", "RegCreateKeyExA", (void**)&org_RegCreateKeyExA, (void*)RegCreateKeyExA_Hook)
+        HookFunc("advapi32.dll", "RegCreateKeyExA", (void**)&orig_RegCreateKeyExA, (void*)RegCreateKeyExA_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================
