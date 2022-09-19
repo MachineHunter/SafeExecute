@@ -3,6 +3,7 @@
 #include "mydebug.h"
 #include "prehook.h"
 #include <Dbghelp.h>
+#include <processthreadsapi.h>
 #pragma comment(lib, "Dbghelp")
 
 extern char processPath[MAX_PATH];
