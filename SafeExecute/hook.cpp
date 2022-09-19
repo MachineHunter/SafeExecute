@@ -7,10 +7,12 @@
 // 1: WindowsAPIの関数型の定義
 typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttributes);
 typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
+typedef int(WINAPI* WSASTARTUP)(WORD wVersionRequired, LPWSADATA lpWSAData);
 typedef HINTERNET (WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXA)(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
+WSASTARTUP orig_WSAStartup;
 INTERNETOPENURLA orig_InternetOpenUrlA;
 REGCREATEKEYEXA orig_RegCreateKeyExA;
 
@@ -37,6 +39,16 @@ bool WINAPI IsDebuggerPresent_Hook() {
     MessageBoxA(NULL, "Hooked IsDebuggerPresent", "debug", MB_OK);
     ExitProcess(1);
     return orig_IsDebuggerPresent();
+}
+
+int WINAPI WSAStartup_Hook(
+    WORD wVersionRequired,
+    LPWSADATA lpWSAData
+) {
+    PreHook("WSAStartup");
+    MessageBoxA(NULL, "Hooked WSAStartup", "debug", MB_OK);
+    ExitProcess(1);
+    return orig_WSAStartup(wVersionRequired, lpWSAData);
 }
 
 
@@ -81,19 +93,23 @@ LSTATUS WINAPI RegCreateKeyExA_Hook(
 HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
         HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook),
+        HookFunc("ws2_32.dll", WSAStartup_Ordinal, (void**)&orig_WSAStartup, (void*)WSAStartup_Hook),
         HookFunc("WinInet.dll", "InternetOpenUrlA", (void**)&orig_InternetOpenUrlA, (void*)InternetOpenUrlA_Hook),
         HookFunc("advapi32.dll", "RegCreateKeyExA", (void**)&orig_RegCreateKeyExA, (void*)RegCreateKeyExA_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================
 
-
 void Hook() {
     for (HookFunc hookfunc : hooklist) {
         ULONG cbSize = 0;
         HANDLE hModule = GetModuleHandleA(0);
 
-        *hookfunc.origfunc = (void*)GetProcAddress(GetModuleHandleA(hookfunc.dllname), hookfunc.funcname);
+        if (hookfunc.isOrdinal)
+            *hookfunc.origfunc = (void*)GetProcAddress(GetModuleHandleA(hookfunc.dllname), MAKEINTRESOURCEA(hookfunc.func.ordinal));
+        else
+            *hookfunc.origfunc = (void*)GetProcAddress(GetModuleHandleA(hookfunc.dllname), hookfunc.func.name);
+
         PIMAGE_IMPORT_DESCRIPTOR pImageImportDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)ImageDirectoryEntryToData(hModule, TRUE, IMAGE_DIRECTORY_ENTRY_IMPORT, &cbSize);
 
         for (; pImageImportDescriptor->Name; pImageImportDescriptor++) {
@@ -110,7 +126,7 @@ void Hook() {
                 if (pfnImportedFunc == (FARPROC)*hookfunc.origfunc) {
                     MEMORY_BASIC_INFORMATION mbi;
                     DWORD dwJunk = 0;
-
+                    
                     VirtualQuery(pFirstThunk, &mbi, sizeof(MEMORY_BASIC_INFORMATION));
                     VirtualProtect(mbi.BaseAddress, mbi.RegionSize, PAGE_EXECUTE_READWRITE, &mbi.Protect);
                     pFirstThunk->u1.Function = (ULONGLONG)(DWORD_PTR)hookfunc.hook;
