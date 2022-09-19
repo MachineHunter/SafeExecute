@@ -51,11 +51,11 @@ HINTERNET InternetOpenUrlA_Hook(
 	DWORD     dwFlags,
 	DWORD_PTR dwContext
 ) {
-	MessageBoxA(NULL, "Hooked InternetOpenUrlA 01", "debug", MB_OK);
+	MessageBoxA(NULL, "Hooked InternetOpenUrlA", "debug", MB_OK);
     PreHook("InternetOpenUrlA");
 
     // InternetOpenUrlA_Hook
-    MessageBoxA(NULL, "Hooked InternetOpenUrlA 02", "debug", MB_OK);
+    MessageBoxA(NULL, "Hooked InternetOpenUrlA", "debug", MB_OK);
     ExitProcess(1);
     return orig_InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwFlags, dwContext);
 }
@@ -65,7 +65,7 @@ HINTERNET InternetOpenUrlA_Hook(
 HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
         HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook),
-		HookFunc("WinInet.dll", "InternetOpenUrlA", (void**)&orig_InternetOpenUrlA, (void*)InternetOpenUrlA_Hook)
+		HookFunc("kernel32.dll", "InternetOpenUrlA", (void**)&orig_InternetOpenUrlA, (void*)InternetOpenUrlA_Hook)
 };
 
 // ================================== Ç±Ç±Ç‹Ç≈Çï“èWÇµÇƒÇ≠ÇæÇ≥Ç¢ÅI =====================================================
