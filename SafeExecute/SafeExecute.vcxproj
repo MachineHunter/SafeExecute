@@ -154,6 +154,7 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="hook.h" />
     <ClInclude Include="mydebug.h" />
+    <ClInclude Include="ordinals.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="prehook.h" />
   </ItemGroup>
