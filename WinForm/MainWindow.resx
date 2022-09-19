@@ -151,7 +151,7 @@
     <value>0, 137</value>
   </data>
   <data name="checklist_panel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>456, 459</value>
+    <value>462, 459</value>
   </data>
   <data name="checklist_panel.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -172,10 +172,10 @@
     <value>Fill</value>
   </data>
   <data name="output_panel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>456, 137</value>
+    <value>462, 137</value>
   </data>
   <data name="output_panel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>474, 459</value>
+    <value>468, 459</value>
   </data>
   <data name="output_panel.TabIndex" type="System.Int32, mscorlib">
     <value>2</value>
