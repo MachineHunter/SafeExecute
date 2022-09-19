@@ -1,37 +1,43 @@
 #include "pch.h"
 #include "hook.h"
+#include <wininet.h>
 
+// ================================== ãƒ•ãƒƒã‚¯ã‚’è¿½åŠ ã™ã‚‹å ´åˆã¯ã€ã“ã“ã‹ã‚‰ =====================================================
 
-// ================================== ƒtƒbƒN‚ð’Ç‰Á‚·‚éê‡‚ÍA‚±‚±‚©‚ç =====================================================
-
-// 1: WindowsAPI‚ÌŠÖ”Œ^‚Ì’è‹`
+// 1: WindowsAPIã®é–¢æ•°åž‹ã®å®šç¾©
 typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttributes);
 typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
 typedef BOOL(WINAPI* CREATEPROCESSA)(PCTSTR pszApplicationName, PTSTR  pszCommandLine, PSECURITY_ATTRIBUTES psaProcess, PSECURITY_ATTRIBUTES psaThread, BOOL   bInheritHandles, DWORD  fdwCreate, PVOID  pvEnvironment, PCTSTR pszCurDir, LPSTARTUPINFO  psiStartInfo, PPROCESS_INFORMATION ppiProcInfo);
+typedef int(WINAPI* WSASTARTUP)(WORD wVersionRequired, LPWSADATA lpWSAData);
+typedef HINTERNET (WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
+typedef LSTATUS(WINAPI* REGCREATEKEYEXA)(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 CREATEPROCESSA orig_CreateProcessA;
+WSASTARTUP orig_WSAStartup;
+INTERNETOPENURLA orig_InternetOpenUrlA;
+REGCREATEKEYEXA orig_RegCreateKeyExA;
 
 
-// 2: ƒtƒbƒNŠÖ”‚Ì—pˆÓiƒRƒR‚Éˆ««ˆ—ŒŸo‚ÌƒƒWƒbƒN‚ð‘‚­j
-// i¦ ŠÖ”–`“ª‚Å PreHook() ‚ð•K‚¸ŒÄ‚ñ‚Å—~‚µ‚¢‚Å‚·...!j
+// 2: ãƒ•ãƒƒã‚¯é–¢æ•°ã®ç”¨æ„ï¼ˆã‚³ã‚³ã«æ‚ªæ€§å‡¦ç†æ¤œå‡ºã®ãƒ­ã‚¸ãƒƒã‚¯ã‚’æ›¸ãï¼‰
+// ï¼ˆâ€» é–¢æ•°å†’é ­ã§ PreHook() ã‚’å¿…ãšå‘¼ã‚“ã§æ¬²ã—ã„ã§ã™...!ï¼‰
 bool WINAPI SetFileAttributesA_Hook(
     LPCSTR lpFileName,
     DWORD dwFileAttributes
-) { 
+) {
     PreHook("SetFileAttributesA");
 
-    // Ž©•ªŽ©g‚ð‰B‚µƒtƒ@ƒCƒ‹‰»‚·‚é‹““®‚ÌŒŸ’m
+    // è‡ªåˆ†è‡ªèº«ã‚’éš ã—ãƒ•ã‚¡ã‚¤ãƒ«åŒ–ã™ã‚‹æŒ™å‹•ã®æ¤œçŸ¥
     if ((strcmp(lpFileName, processPath) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
         ExitProcess(1);
     }
-    return orig_SetFileAttributesA(lpFileName, dwFileAttributes);   
+    return orig_SetFileAttributesA(lpFileName, dwFileAttributes);
 }
 
 bool WINAPI IsDebuggerPresent_Hook() {
     PreHook("IsDebuggerPresent");
 
-    // IsDebuggerPresent_Hook ƒfƒoƒbƒK‚Ì‘¶Ý‚ðŠm”F‚µ‚Ä‚¢‚é‹““®‚ÌŒŸ’m
+    // IsDebuggerPresent_Hook ãƒ‡ãƒãƒƒã‚¬ã®å­˜åœ¨ã‚’ç¢ºèªã—ã¦ã„ã‚‹æŒ™å‹•ã®æ¤œçŸ¥
     MessageBoxA(NULL, "Hooked IsDebuggerPresent", "debug", MB_OK);
     ExitProcess(1);
     return orig_IsDebuggerPresent();
@@ -51,29 +57,81 @@ bool WINAPI CreateProcessA_Hook(
 ) {
     PreHook("CreateProcessA");
 
-    // CreateProcessA‚É‚æ‚é‹““®‚ðŒŸ’m
+    // CreateProcessAï¿½É‚ï¿½é‹“ï¿½ï¿½ï¿½ï¿½m
     MessageBoxA(NULL, "Hooked CreateProcessA", "debug", MB_OK);
     ExitProcess(1);
     return orig_CreateProcessA(pszApplicationName, pszCommandLine, psaProcess, psaThread, bInheritHandles, fdwCreate, pvEnvironment, pszCurDir, psiStartInfo, ppiProcInfo);
 }
 
+int WINAPI WSAStartup_Hook(
+    WORD wVersionRequired,
+    LPWSADATA lpWSAData
+) {
+    PreHook("WSAStartup");
+    MessageBoxA(NULL, "Hooked WSAStartup", "debug", MB_OK);
+    ExitProcess(1);
+    return orig_WSAStartup(wVersionRequired, lpWSAData);
+}
 
-// 3: ƒtƒbƒN‚·‚é‘S‚Ä‚ÌWindowsAPI‚ÌƒŠƒXƒg
+HINTERNET InternetOpenUrlA_Hook(
+	HINTERNET hInternet,
+	LPCSTR    lpszUrl,
+	LPCSTR    lpszHeaders,
+	DWORD     dwHeadersLength,
+	DWORD     dwFlags,
+	DWORD_PTR dwContext
+) {
+    PreHook("InternetOpenUrlA");
+
+    // InternetOpenUrlA_Hook
+    MessageBoxA(NULL, "Hooked InternetOpenUrlA", "debug", MB_OK);
+    ExitProcess(1);
+    return orig_InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwFlags, dwContext);
+}
+
+LSTATUS WINAPI RegCreateKeyExA_Hook(
+    HKEY hkey,
+    LPCSTR lpSubKey,
+    DWORD Reserved,
+    LPSTR lpClass,
+    DWORD dwOptions,
+    REGSAM samDesired,
+    const LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    PHKEY phkResult,
+    LPDWORD lpdwDisposition
+) {
+    PreHook("RegCreateKeyExA");
+    // ã‚¹ã‚¿ãƒ¼ãƒˆã‚¢ãƒƒãƒ—ãƒ¬ã‚¸ã‚¹ãƒˆãƒªã¸ã®ç™»éŒ²ã®æ¤œçŸ¥
+    if ((_stricmp(lpSubKey, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)){
+        ExitProcess(1);
+    }
+
+    return orig_RegCreateKeyExA(hkey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes, phkResult, lpdwDisposition);
+}
+
+
+// 3: ãƒ•ãƒƒã‚¯ã™ã‚‹å…¨ã¦ã®WindowsAPIã®ãƒªã‚¹ãƒˆ
 HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
         HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook),
-        HookFunc("kernel32.dll", "CreateProcessA", (void**)&orig_CreateProcessA, (void*)CreateProcessA_Hook)
+        HookFunc("kernel32.dll", "CreateProcessA", (void**)&orig_CreateProcessA, (void*)CreateProcessA_Hook),
+        HookFunc("ws2_32.dll", WSAStartup_Ordinal, (void**)&orig_WSAStartup, (void*)WSAStartup_Hook),
+        HookFunc("WinInet.dll", "InternetOpenUrlA", (void**)&orig_InternetOpenUrlA, (void*)InternetOpenUrlA_Hook),
+        HookFunc("advapi32.dll", "RegCreateKeyExA", (void**)&orig_RegCreateKeyExA, (void*)RegCreateKeyExA_Hook)
 };
 
-// ================================== ‚±‚±‚Ü‚Å‚ð•ÒW‚µ‚Ä‚­‚¾‚³‚¢I =====================================================
-
+// ================================== ã“ã“ã¾ã§ã‚’ç·¨é›†ã—ã¦ãã ã•ã„ï¼ =====================================================
 
 void Hook() {
     for (HookFunc hookfunc : hooklist) {
         ULONG cbSize = 0;
         HANDLE hModule = GetModuleHandleA(0);
 
-        *hookfunc.origfunc = (void*)GetProcAddress(GetModuleHandleA(hookfunc.dllname), hookfunc.funcname);
+        if (hookfunc.isOrdinal)
+            *hookfunc.origfunc = (void*)GetProcAddress(GetModuleHandleA(hookfunc.dllname), MAKEINTRESOURCEA(hookfunc.func.ordinal));
+        else
+            *hookfunc.origfunc = (void*)GetProcAddress(GetModuleHandleA(hookfunc.dllname), hookfunc.func.name);
+
         PIMAGE_IMPORT_DESCRIPTOR pImageImportDescriptor = (PIMAGE_IMPORT_DESCRIPTOR)ImageDirectoryEntryToData(hModule, TRUE, IMAGE_DIRECTORY_ENTRY_IMPORT, &cbSize);
 
         for (; pImageImportDescriptor->Name; pImageImportDescriptor++) {
@@ -90,7 +148,7 @@ void Hook() {
                 if (pfnImportedFunc == (FARPROC)*hookfunc.origfunc) {
                     MEMORY_BASIC_INFORMATION mbi;
                     DWORD dwJunk = 0;
-
+                    
                     VirtualQuery(pFirstThunk, &mbi, sizeof(MEMORY_BASIC_INFORMATION));
                     VirtualProtect(mbi.BaseAddress, mbi.RegionSize, PAGE_EXECUTE_READWRITE, &mbi.Protect);
                     pFirstThunk->u1.Function = (ULONGLONG)(DWORD_PTR)hookfunc.hook;
