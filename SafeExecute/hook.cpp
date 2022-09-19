@@ -7,8 +7,11 @@
 // 1: WindowsAPIの関数型の定義
 typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttributes);
 typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
+typedef LSTATUS(WINAPI* REGCREATEKEYEXA)(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
+
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
+REGCREATEKEYEXA orig_RegCreateKeyExA;
 
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
@@ -16,14 +19,14 @@ ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 bool WINAPI SetFileAttributesA_Hook(
     LPCSTR lpFileName,
     DWORD dwFileAttributes
-) { 
+) {
     PreHook("SetFileAttributesA");
 
     // 自分自身を隠しファイル化する挙動の検知
     if ((strcmp(lpFileName, processPath) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
         ExitProcess(1);
     }
-    return orig_SetFileAttributesA(lpFileName, dwFileAttributes);   
+    return orig_SetFileAttributesA(lpFileName, dwFileAttributes);
 }
 
 bool WINAPI IsDebuggerPresent_Hook() {
@@ -35,11 +38,32 @@ bool WINAPI IsDebuggerPresent_Hook() {
     return orig_IsDebuggerPresent();
 }
 
+LSTATUS WINAPI RegCreateKeyExA_Hook(
+    HKEY hkey,
+    LPCSTR lpSubKey,
+    DWORD Reserved,
+    LPSTR lpClass,
+    DWORD dwOptions,
+    REGSAM samDesired,
+    const LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    PHKEY phkResult,
+    LPDWORD lpdwDisposition
+) {
+    PreHook("RegCreateKeyExA");
+    // スタートアップレジストリへの登録の検知
+    if ((_stricmp(lpSubKey, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)){
+        ExitProcess(1);
+    }
+
+    return orig_RegCreateKeyExA(hkey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes, phkResult, lpdwDisposition);
+}
+
 
 // 3: フックする全てのWindowsAPIのリスト
 HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
-        HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook)
+        HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook),
+        HookFunc("advapi32.dll", "RegCreateKeyExA", (void**)&orig_RegCreateKeyExA, (void*)RegCreateKeyExA_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================
