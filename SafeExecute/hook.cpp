@@ -52,7 +52,7 @@ LSTATUS WINAPI RegCreateKeyExA_Hook(
     PreHook("RegCreateKeyExA");
 
     // スタートアップレジストリへの登録の検知
-    if ((dwOptions == REG_OPTION_NON_VOLATILE) && (samDesired == KEY_SET_VALUE)) {
+    if (strcmp(lpSubKey, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) {
         ExitProcess(1);
     }
 
