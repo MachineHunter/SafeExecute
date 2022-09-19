@@ -5,6 +5,7 @@
 #include <WinSock2.h>
 #include "ordinals.h"
 #include <Dbghelp.h>
+#include <processthreadsapi.h>
 #pragma comment(lib, "Dbghelp")
 
 extern char processPath[MAX_PATH];

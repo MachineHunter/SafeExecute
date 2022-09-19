@@ -7,11 +7,13 @@
 // 1: WindowsAPIの関数型の定義
 typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttributes);
 typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
+typedef BOOL(WINAPI* CREATEPROCESSA)(PCTSTR pszApplicationName, PTSTR  pszCommandLine, PSECURITY_ATTRIBUTES psaProcess, PSECURITY_ATTRIBUTES psaThread, BOOL   bInheritHandles, DWORD  fdwCreate, PVOID  pvEnvironment, PCTSTR pszCurDir, LPSTARTUPINFO  psiStartInfo, PPROCESS_INFORMATION ppiProcInfo);
 typedef int(WINAPI* WSASTARTUP)(WORD wVersionRequired, LPWSADATA lpWSAData);
 typedef HINTERNET (WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXA)(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
+CREATEPROCESSA orig_CreateProcessA;
 WSASTARTUP orig_WSAStartup;
 INTERNETOPENURLA orig_InternetOpenUrlA;
 REGCREATEKEYEXA orig_RegCreateKeyExA;
@@ -41,6 +43,26 @@ bool WINAPI IsDebuggerPresent_Hook() {
     return orig_IsDebuggerPresent();
 }
 
+bool WINAPI CreateProcessA_Hook(
+    PCTSTR pszApplicationName,
+    PTSTR  pszCommandLine,
+    PSECURITY_ATTRIBUTES psaProcess,
+    PSECURITY_ATTRIBUTES psaThread,
+    BOOL   bInheritHandles,
+    DWORD  fdwCreate,
+    PVOID  pvEnvironment,
+    PCTSTR pszCurDir,
+    LPSTARTUPINFO  psiStartInfo,
+    PPROCESS_INFORMATION ppiProcInfo
+) {
+    PreHook("CreateProcessA");
+
+    // CreateProcessA�ɂ�鋓����m
+    MessageBoxA(NULL, "Hooked CreateProcessA", "debug", MB_OK);
+    ExitProcess(1);
+    return orig_CreateProcessA(pszApplicationName, pszCommandLine, psaProcess, psaThread, bInheritHandles, fdwCreate, pvEnvironment, pszCurDir, psiStartInfo, ppiProcInfo);
+}
+
 int WINAPI WSAStartup_Hook(
     WORD wVersionRequired,
     LPWSADATA lpWSAData
@@ -50,7 +72,6 @@ int WINAPI WSAStartup_Hook(
     ExitProcess(1);
     return orig_WSAStartup(wVersionRequired, lpWSAData);
 }
-
 
 HINTERNET InternetOpenUrlA_Hook(
 	HINTERNET hInternet,
@@ -93,6 +114,7 @@ LSTATUS WINAPI RegCreateKeyExA_Hook(
 HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
         HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook),
+        HookFunc("kernel32.dll", "CreateProcessA", (void**)&orig_CreateProcessA, (void*)CreateProcessA_Hook),
         HookFunc("ws2_32.dll", WSAStartup_Ordinal, (void**)&orig_WSAStartup, (void*)WSAStartup_Hook),
         HookFunc("WinInet.dll", "InternetOpenUrlA", (void**)&orig_InternetOpenUrlA, (void*)InternetOpenUrlA_Hook),
         HookFunc("advapi32.dll", "RegCreateKeyExA", (void**)&orig_RegCreateKeyExA, (void*)RegCreateKeyExA_Hook)
