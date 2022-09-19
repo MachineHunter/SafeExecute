@@ -145,13 +145,13 @@
     <value>2</value>
   </data>
   <data name="checklist_panel.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
-    <value>Left</value>
+    <value>Fill</value>
   </data>
   <data name="checklist_panel.Location" type="System.Drawing.Point, System.Drawing">
     <value>0, 137</value>
   </data>
   <data name="checklist_panel.Size" type="System.Drawing.Size, System.Drawing">
-    <value>462, 459</value>
+    <value>930, 459</value>
   </data>
   <data name="checklist_panel.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -169,7 +169,7 @@
     <value>1</value>
   </data>
   <data name="output_panel.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
-    <value>Fill</value>
+    <value>Right</value>
   </data>
   <data name="output_panel.Location" type="System.Drawing.Point, System.Drawing">
     <value>462, 137</value>
