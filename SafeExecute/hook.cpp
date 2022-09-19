@@ -7,14 +7,7 @@
 // 1: WindowsAPIÇÃä÷êîå^ÇÃíËã`
 typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttributes);
 typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
-typedef HINTERNET (WINAPI* INTERNETOPENURLA)(
-	HINTERNET hInternet,
-	LPCSTR    lpszUrl,
-	LPCSTR    lpszHeaders,
-	DWORD     dwHeadersLength,
-	DWORD     dwFlags,
-	DWORD_PTR dwContext
-);
+typedef HINTERNET (WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 INTERNETOPENURLA orig_InternetOpenUrlA;
@@ -43,7 +36,14 @@ bool WINAPI IsDebuggerPresent_Hook() {
     return orig_IsDebuggerPresent();
 }
 
-HINTERNET InternetOpenUrlA_Hook(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength,	DWORD dwFlags, DWORD_PTR dwContext) {
+HINTERNET InternetOpenUrlA_Hook(
+	HINTERNET hInternet,
+	LPCSTR    lpszUrl,
+	LPCSTR    lpszHeaders,
+	DWORD     dwHeadersLength,
+	DWORD     dwFlags,
+	DWORD_PTR dwContext
+) {
     PreHook("InternetOpenUrlA");
 
     // InternetOpenUrlA_Hook
