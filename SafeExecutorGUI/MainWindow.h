@@ -1,6 +1,6 @@
 #pragma once
 
-namespace WinForm {
+namespace SafeExecutorGUI {
 
 	using namespace System;
 	using namespace System::ComponentModel;
@@ -35,9 +35,9 @@ namespace WinForm {
 			}
 		}
 	private: System::Windows::Forms::Panel^ target_exe_selection_panel;
+	protected:
 	private: System::Windows::Forms::Panel^ checklist_panel;
 	private: System::Windows::Forms::Panel^ output_panel;
-	protected:
 
 	private:
 		/// <summary>
@@ -52,7 +52,6 @@ namespace WinForm {
 		/// </summary>
 		void InitializeComponent(void)
 		{
-			System::ComponentModel::ComponentResourceManager^ resources = (gcnew System::ComponentModel::ComponentResourceManager(MainWindow::typeid));
 			this->target_exe_selection_panel = (gcnew System::Windows::Forms::Panel());
 			this->checklist_panel = (gcnew System::Windows::Forms::Panel());
 			this->output_panel = (gcnew System::Windows::Forms::Panel());
@@ -60,37 +59,44 @@ namespace WinForm {
 			// 
 			// target_exe_selection_panel
 			// 
-			this->target_exe_selection_panel->BackColor = System::Drawing::SystemColors::HotTrack;
-			resources->ApplyResources(this->target_exe_selection_panel, L"target_exe_selection_panel");
+			this->target_exe_selection_panel->BackColor = System::Drawing::SystemColors::ActiveCaption;
+			this->target_exe_selection_panel->Dock = System::Windows::Forms::DockStyle::Top;
+			this->target_exe_selection_panel->Location = System::Drawing::Point(0, 0);
 			this->target_exe_selection_panel->Name = L"target_exe_selection_panel";
-			this->target_exe_selection_panel->Paint += gcnew System::Windows::Forms::PaintEventHandler(this, &MainWindow::target_exe_selection_panel_Paint);
+			this->target_exe_selection_panel->Size = System::Drawing::Size(861, 166);
+			this->target_exe_selection_panel->TabIndex = 0;
 			// 
 			// checklist_panel
 			// 
-			this->checklist_panel->BackColor = System::Drawing::SystemColors::InactiveCaption;
-			resources->ApplyResources(this->checklist_panel, L"checklist_panel");
+			this->checklist_panel->BackColor = System::Drawing::SystemColors::ActiveBorder;
+			this->checklist_panel->Dock = System::Windows::Forms::DockStyle::Fill;
+			this->checklist_panel->Location = System::Drawing::Point(0, 166);
 			this->checklist_panel->Name = L"checklist_panel";
+			this->checklist_panel->Size = System::Drawing::Size(861, 432);
+			this->checklist_panel->TabIndex = 1;
 			// 
 			// output_panel
 			// 
 			this->output_panel->BackColor = System::Drawing::SystemColors::Info;
-			resources->ApplyResources(this->output_panel, L"output_panel");
+			this->output_panel->Dock = System::Windows::Forms::DockStyle::Right;
+			this->output_panel->Location = System::Drawing::Point(482, 166);
 			this->output_panel->Name = L"output_panel";
+			this->output_panel->Size = System::Drawing::Size(379, 432);
+			this->output_panel->TabIndex = 2;
 			// 
 			// MainWindow
 			// 
-			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::None;
-			this->BackColor = System::Drawing::SystemColors::Window;
-			resources->ApplyResources(this, L"$this");
+			this->AutoScaleDimensions = System::Drawing::SizeF(6, 12);
+			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
+			this->ClientSize = System::Drawing::Size(861, 598);
 			this->Controls->Add(this->output_panel);
 			this->Controls->Add(this->checklist_panel);
 			this->Controls->Add(this->target_exe_selection_panel);
 			this->Name = L"MainWindow";
+			this->Text = L"MainWindow";
 			this->ResumeLayout(false);
 
 		}
 #pragma endregion
-	private: System::Void target_exe_selection_panel_Paint(System::Object^ sender, System::Windows::Forms::PaintEventArgs^ e) {
-	}
 	};
 }
