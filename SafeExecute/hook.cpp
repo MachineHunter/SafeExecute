@@ -1,28 +1,29 @@
 #include "pch.h"
 #include "hook.h"
+#include <wininet.h>
 
+// ================================== ãƒ•ãƒƒã‚¯ã‚’è¿½åŠ ã™ã‚‹å ´åˆã¯ã€ã“ã“ã‹ã‚‰ =====================================================
 
-// ================================== ƒtƒbƒN‚ğ’Ç‰Á‚·‚éê‡‚ÍA‚±‚±‚©‚ç =====================================================
-
-// 1: WindowsAPI‚ÌŠÖ”Œ^‚Ì’è‹`
+// 1: WindowsAPIã®é–¢æ•°å‹ã®å®šç¾©
 typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttributes);
 typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
+typedef HINTERNET (WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXA)(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
-
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
+INTERNETOPENURLA orig_InternetOpenUrlA;
 REGCREATEKEYEXA orig_RegCreateKeyExA;
 
 
-// 2: ƒtƒbƒNŠÖ”‚Ì—pˆÓiƒRƒR‚Éˆ««ˆ—ŒŸo‚ÌƒƒWƒbƒN‚ğ‘‚­j
-// i¦ ŠÖ”–`“ª‚Å PreHook() ‚ğ•K‚¸ŒÄ‚ñ‚Å—~‚µ‚¢‚Å‚·...!j
+// 2: ãƒ•ãƒƒã‚¯é–¢æ•°ã®ç”¨æ„ï¼ˆã‚³ã‚³ã«æ‚ªæ€§å‡¦ç†æ¤œå‡ºã®ãƒ­ã‚¸ãƒƒã‚¯ã‚’æ›¸ãï¼‰
+// ï¼ˆâ€» é–¢æ•°å†’é ­ã§ PreHook() ã‚’å¿…ãšå‘¼ã‚“ã§æ¬²ã—ã„ã§ã™...!ï¼‰
 bool WINAPI SetFileAttributesA_Hook(
     LPCSTR lpFileName,
     DWORD dwFileAttributes
 ) {
     PreHook("SetFileAttributesA");
 
-    // ©•ª©g‚ğ‰B‚µƒtƒ@ƒCƒ‹‰»‚·‚é‹““®‚ÌŒŸ’m
+    // è‡ªåˆ†è‡ªèº«ã‚’éš ã—ãƒ•ã‚¡ã‚¤ãƒ«åŒ–ã™ã‚‹æŒ™å‹•ã®æ¤œçŸ¥
     if ((strcmp(lpFileName, processPath) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
         ExitProcess(1);
     }
@@ -32,10 +33,27 @@ bool WINAPI SetFileAttributesA_Hook(
 bool WINAPI IsDebuggerPresent_Hook() {
     PreHook("IsDebuggerPresent");
 
-    // IsDebuggerPresent_Hook ƒfƒoƒbƒK‚Ì‘¶İ‚ğŠm”F‚µ‚Ä‚¢‚é‹““®‚ÌŒŸ’m
+    // IsDebuggerPresent_Hook ãƒ‡ãƒãƒƒã‚¬ã®å­˜åœ¨ã‚’ç¢ºèªã—ã¦ã„ã‚‹æŒ™å‹•ã®æ¤œçŸ¥
     MessageBoxA(NULL, "Hooked IsDebuggerPresent", "debug", MB_OK);
     ExitProcess(1);
     return orig_IsDebuggerPresent();
+}
+
+
+HINTERNET InternetOpenUrlA_Hook(
+	HINTERNET hInternet,
+	LPCSTR    lpszUrl,
+	LPCSTR    lpszHeaders,
+	DWORD     dwHeadersLength,
+	DWORD     dwFlags,
+	DWORD_PTR dwContext
+) {
+    PreHook("InternetOpenUrlA");
+
+    // InternetOpenUrlA_Hook
+    MessageBoxA(NULL, "Hooked InternetOpenUrlA", "debug", MB_OK);
+    ExitProcess(1);
+    return orig_InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwFlags, dwContext);
 }
 
 LSTATUS WINAPI RegCreateKeyExA_Hook(
@@ -50,7 +68,7 @@ LSTATUS WINAPI RegCreateKeyExA_Hook(
     LPDWORD lpdwDisposition
 ) {
     PreHook("RegCreateKeyExA");
-    // ƒXƒ^[ƒgƒAƒbƒvƒŒƒWƒXƒgƒŠ‚Ö‚Ì“o˜^‚ÌŒŸ’m
+    // ã‚¹ã‚¿ãƒ¼ãƒˆã‚¢ãƒƒãƒ—ãƒ¬ã‚¸ã‚¹ãƒˆãƒªã¸ã®ç™»éŒ²ã®æ¤œçŸ¥
     if ((_stricmp(lpSubKey, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)){
         ExitProcess(1);
     }
@@ -59,14 +77,15 @@ LSTATUS WINAPI RegCreateKeyExA_Hook(
 }
 
 
-// 3: ƒtƒbƒN‚·‚é‘S‚Ä‚ÌWindowsAPI‚ÌƒŠƒXƒg
+// 3: ãƒ•ãƒƒã‚¯ã™ã‚‹å…¨ã¦ã®WindowsAPIã®ãƒªã‚¹ãƒˆ
 HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
         HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook),
+        HookFunc("WinInet.dll", "InternetOpenUrlA", (void**)&orig_InternetOpenUrlA, (void*)InternetOpenUrlA_Hook),
         HookFunc("advapi32.dll", "RegCreateKeyExA", (void**)&orig_RegCreateKeyExA, (void*)RegCreateKeyExA_Hook)
 };
 
-// ================================== ‚±‚±‚Ü‚Å‚ğ•ÒW‚µ‚Ä‚­‚¾‚³‚¢I =====================================================
+// ================================== ã“ã“ã¾ã§ã‚’ç·¨é›†ã—ã¦ãã ã•ã„ï¼ =====================================================
 
 
 void Hook() {
