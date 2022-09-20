@@ -1,0 +1,5 @@
+SetFileAttributesA,0
+IsDebuggerPresent,1
+RegCreateKeyExA,0
+InternetOpenUrlA,1
+115,0

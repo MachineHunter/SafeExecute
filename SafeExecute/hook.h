@@ -19,6 +19,7 @@ typedef struct HookFunc {
     void** origfunc;
     void* hook;
     bool isOrdinal;
+    bool isChecked;
 
     HookFunc(const char* _dllname, const char* _funcname, void** _origfunc, void* _hook) {
         dllname = _dllname;
@@ -26,6 +27,7 @@ typedef struct HookFunc {
         origfunc = _origfunc;
         hook = _hook;
         isOrdinal = false;
+        isChecked = true; // TODO: デプロイ時はfalseに
     }
 
     HookFunc(const char* _dllname, DWORD _ordinal, void** _origfunc, void* _hook) {
@@ -34,8 +36,10 @@ typedef struct HookFunc {
         origfunc = _origfunc;
         hook = _hook;
         isOrdinal = true;
+        isChecked = true; // TODO: デプロイ時はfalseに
     }
 };
 typedef std::vector<HookFunc> HookList;
+extern HookList hooklist;
 
 void Hook();
