@@ -11,14 +11,16 @@ typedef BOOL(WINAPI* CREATEPROCESSA)(PCTSTR pszApplicationName, PTSTR  pszComman
 typedef int(WINAPI* WSASTARTUP)(WORD wVersionRequired, LPWSADATA lpWSAData);
 typedef HINTERNET (WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXA)(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
-typedef BOOL(WINAPI* MOVEFILEW)(LPCTSTR lpExistingFileName, LPCTSTR lpNewFileName);
+typedef BOOL(WINAPI* DELETEFILEW)(LPCWSTR lpFileName);
+typedef BOOL(WINAPI* DELETEFILEA)(LPCSTR lpFileName);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 CREATEPROCESSA orig_CreateProcessA;
 WSASTARTUP orig_WSAStartup;
 INTERNETOPENURLA orig_InternetOpenUrlA;
 REGCREATEKEYEXA orig_RegCreateKeyExA;
-MOVEFILEW orig_MoveFileW;
+DELETEFILEW orig_DeleteFileW;
+DELETEFILEA orig_DeleteFileA;
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
 // （※ 関数冒頭で PreHook() を必ず呼んで欲しいです...!）
@@ -58,7 +60,6 @@ bool WINAPI CreateProcessA_Hook(
 ) {
     PreHook("CreateProcessA");
 
-    // CreateProcessA
     MessageBoxA(NULL, "Hooked CreateProcessA", "debug", MB_OK);
     ExitProcess(1);
     return orig_CreateProcessA(pszApplicationName, pszCommandLine, psaProcess, psaThread, bInheritHandles, fdwCreate, pvEnvironment, pszCurDir, psiStartInfo, ppiProcInfo);
@@ -110,15 +111,24 @@ LSTATUS WINAPI RegCreateKeyExA_Hook(
     return orig_RegCreateKeyExA(hkey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes, phkResult, lpdwDisposition);
 }
 
-BOOL WINAPI MoveFileW_Hook(
-    LPCTSTR lpExistingFileName,
-    LPCTSTR lpNewFileName
+bool WINAPI DeleteFileW_Hook(
+    LPCWSTR lpFileName
 ) {
-    PreHook("MoveFileW");
-    // MoveFile Hook
-    MessageBoxA(NULL, "Hooked MoveFileW", "debug", MB_OK);
+    PreHook("DeleteFileW");
+    // DeleteFileWの実行を検知
     ExitProcess(1);
-    return orig_MoveFileW(lpExistingFileName, lpNewFileName);
+
+    return orig_DeleteFileW(lpFileName);
+}
+
+bool WINAPI DeleteFileA_Hook(
+    LPCSTR lpFileName
+) {
+    PreHook("DeleteFileA");
+    // DeleteFileAの実行を検知
+    ExitProcess(1);
+
+    return orig_DeleteFileA(lpFileName);
 }
 
 
@@ -130,7 +140,8 @@ HookList hooklist = {
         HookFunc("ws2_32.dll", WSAStartup_Ordinal, (void**)&orig_WSAStartup, (void*)WSAStartup_Hook),
         HookFunc("WinInet.dll", "InternetOpenUrlA", (void**)&orig_InternetOpenUrlA, (void*)InternetOpenUrlA_Hook),
         HookFunc("advapi32.dll", "RegCreateKeyExA", (void**)&orig_RegCreateKeyExA, (void*)RegCreateKeyExA_Hook),
-        HookFunc("kernel32.dll", "MoveFileW", (void**)&orig_MoveFileW, (void*)MoveFileW_Hook)
+        HookFunc("kernel32.dll", "DeleteFileW", (void**)&orig_DeleteFileW, (void*)DeleteFileW_Hook),
+        HookFunc("kernel32.dll", "DeleteFileA", (void**)&orig_DeleteFileA, (void*)DeleteFileA_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================
