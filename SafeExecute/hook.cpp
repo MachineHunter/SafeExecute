@@ -142,6 +142,8 @@ HookList hooklist = {
 
 void Hook() {
     for (HookFunc hookfunc : hooklist) {
+        if (!hookfunc.isChecked) continue;
+
         ULONG cbSize = 0;
         HANDLE hModule = GetModuleHandleA(0);
 
