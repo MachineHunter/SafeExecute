@@ -11,16 +11,15 @@ typedef BOOL(WINAPI* CREATEPROCESSA)(PCTSTR pszApplicationName, PTSTR  pszComman
 typedef int(WINAPI* WSASTARTUP)(WORD wVersionRequired, LPWSADATA lpWSAData);
 typedef HINTERNET (WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXA)(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
-typedef BOOL(WINAPI* DELETEFILEW)(LPCWSTR lpFileName);
-typedef BOOL(WINAPI* DELETEFILEA)(LPCSTR lpFileName);
+typedef BOOL(WINAPI* WRITEFILE)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 CREATEPROCESSA orig_CreateProcessA;
 WSASTARTUP orig_WSAStartup;
 INTERNETOPENURLA orig_InternetOpenUrlA;
 REGCREATEKEYEXA orig_RegCreateKeyExA;
-DELETEFILEW orig_DeleteFileW;
-DELETEFILEA orig_DeleteFileA;
+WRITEFILE orig_WriteFile;
+
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
 // （※ 関数冒頭で PreHook() を必ず呼んで欲しいです...!）
@@ -60,6 +59,7 @@ bool WINAPI CreateProcessA_Hook(
 ) {
     PreHook("CreateProcessA");
 
+    // CreateProcessA
     MessageBoxA(NULL, "Hooked CreateProcessA", "debug", MB_OK);
     ExitProcess(1);
     return orig_CreateProcessA(pszApplicationName, pszCommandLine, psaProcess, psaThread, bInheritHandles, fdwCreate, pvEnvironment, pszCurDir, psiStartInfo, ppiProcInfo);
@@ -111,24 +111,19 @@ LSTATUS WINAPI RegCreateKeyExA_Hook(
     return orig_RegCreateKeyExA(hkey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes, phkResult, lpdwDisposition);
 }
 
-bool WINAPI DeleteFileW_Hook(
-    LPCWSTR lpFileName
+bool WINAPI WriteFile_Hook(
+    HANDLE       hFile,
+    LPCVOID      lpBuffer,
+    DWORD        nNumberOfBytesToWrite,
+    LPDWORD      lpNumberOfBytesWritten,
+    LPOVERLAPPED lpOverlapped
 ) {
-    PreHook("DeleteFileW");
-    // DeleteFileWの実行を検知
+    PreHook("WriteFile");
+
+    // WriteFile
+    MessageBoxA(NULL, "Hooked WriteFile", "debug", MB_OK);
     ExitProcess(1);
-
-    return orig_DeleteFileW(lpFileName);
-}
-
-bool WINAPI DeleteFileA_Hook(
-    LPCSTR lpFileName
-) {
-    PreHook("DeleteFileA");
-    // DeleteFileAの実行を検知
-    ExitProcess(1);
-
-    return orig_DeleteFileA(lpFileName);
+    return orig_WriteFile(hFile, lpBuffer, nNumberOfBytesToWrite, lpNumberOfBytesWritten, lpOverlapped);
 }
 
 
@@ -140,8 +135,7 @@ HookList hooklist = {
         HookFunc("ws2_32.dll", WSAStartup_Ordinal, (void**)&orig_WSAStartup, (void*)WSAStartup_Hook),
         HookFunc("WinInet.dll", "InternetOpenUrlA", (void**)&orig_InternetOpenUrlA, (void*)InternetOpenUrlA_Hook),
         HookFunc("advapi32.dll", "RegCreateKeyExA", (void**)&orig_RegCreateKeyExA, (void*)RegCreateKeyExA_Hook),
-        HookFunc("kernel32.dll", "DeleteFileW", (void**)&orig_DeleteFileW, (void*)DeleteFileW_Hook),
-        HookFunc("kernel32.dll", "DeleteFileA", (void**)&orig_DeleteFileA, (void*)DeleteFileA_Hook)
+        HookFunc("kernel32.dll", "WriteFile", (void**)&orig_WriteFile, (void*)WriteFile_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================
