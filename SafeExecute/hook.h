@@ -6,7 +6,6 @@
 #include "ordinals.h"
 #include <Dbghelp.h>
 #include <processthreadsapi.h>
-#include <fileapi.h>
 #pragma comment(lib, "Dbghelp")
 
 extern char processPath[MAX_PATH];

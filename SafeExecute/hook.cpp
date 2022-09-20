@@ -59,7 +59,7 @@ bool WINAPI CreateProcessA_Hook(
 ) {
     PreHook("CreateProcessA");
 
-    // CreateProcessA�ɂ�鋓����m
+    // CreateProcessA
     MessageBoxA(NULL, "Hooked CreateProcessA", "debug", MB_OK);
     ExitProcess(1);
     return orig_CreateProcessA(pszApplicationName, pszCommandLine, psaProcess, psaThread, bInheritHandles, fdwCreate, pvEnvironment, pszCurDir, psiStartInfo, ppiProcInfo);
