@@ -1,7 +1,14 @@
 #include "pch.h"
 #include "prehook.h"
 
-void PreHook(LPCSTR apiName) {
+void PreHook(int argc, ...) {
+	va_list vl;
+	va_start(vl, argc);
+
+	std::vector<char*> argv;
+	for (int i = 0; i < argc; i++)
+		argv.push_back(va_arg(vl, char*));
+
 	char path[MAX_PATH];
 	GetCurrentDirectoryA(MAX_PATH, path);
 	strcat_s(path, "\\logs");
@@ -16,7 +23,7 @@ void PreHook(LPCSTR apiName) {
 		}
 		else {
 			hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
-			char header[] = "timestamp,executable path,hooked windows api\n";
+			char header[] = "timestamp,executable path,hooked windows api,args\n";
 			WriteFile(hFile, header, strlen(header), &writesize, NULL);
 		}
 
@@ -26,10 +33,16 @@ void PreHook(LPCSTR apiName) {
 		GetLocalTime(&time);
 
 		char buf[1000];
-		snprintf(buf, 1000, "%04d/%02d/%02d %02d:%02d:%02d.%d,%s,%s\n",
+		memset(buf, 0, 1000);
+		snprintf(buf, 1000, "%04d/%02d/%02d %02d:%02d:%02d.%d,%s,%s",
 			time.wYear, time.wMonth, time.wDay,
 			time.wHour, time.wMinute, time.wSecond, time.wMilliseconds,
-			processPath, apiName);
+			processPath, argv[0]);
+		for (int i = 1; i < argc; i++) {
+			strcat_s(buf, ",");
+			strcat_s(buf, argv[i]);
+		}
+		strcat_s(buf, "\n");
 
 		WriteFile(hFile, buf, strlen(buf), &writesize, NULL);
 
