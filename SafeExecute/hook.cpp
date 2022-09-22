@@ -33,20 +33,19 @@ bool WINAPI SetFileAttributesA_Hook(
     LPCSTR lpFileName,
     DWORD dwFileAttributes
 ) {
-    PreHook("SetFileAttributesA");
 
     // 自分自身を隠しファイル化する挙動の検知
     if ((strcmp(lpFileName, processPath) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
+        PreHook(3, "SetFileAttributesA", lpFileName, "FILE_ATTRIBUTE_HIDDEN");
+        // TODO: interactive
         ExitProcess(1);
     }
     return orig_SetFileAttributesA(lpFileName, dwFileAttributes);
 }
 
 bool WINAPI IsDebuggerPresent_Hook() {
-    PreHook("IsDebuggerPresent");
-
-    // IsDebuggerPresent_Hook デバッガの存在を確認している挙動の検知
-    MessageBoxA(NULL, "Hooked IsDebuggerPresent", "debug", MB_OK);
+    PreHook(1, "IsDebuggerPresent");
+    // TODO: interactive
     ExitProcess(1);
     return orig_IsDebuggerPresent();
 }
@@ -63,10 +62,8 @@ bool WINAPI CreateProcessA_Hook(
     LPSTARTUPINFO  psiStartInfo,
     PPROCESS_INFORMATION ppiProcInfo
 ) {
-    PreHook("CreateProcessA");
-
-    // CreateProcessA
-    MessageBoxA(NULL, "Hooked CreateProcessA", "debug", MB_OK);
+    PreHook(1, "CreateProcessA");
+    // TODO: interactive
     ExitProcess(1);
     return orig_CreateProcessA(pszApplicationName, pszCommandLine, psaProcess, psaThread, bInheritHandles, fdwCreate, pvEnvironment, pszCurDir, psiStartInfo, ppiProcInfo);
 }
@@ -75,8 +72,8 @@ int WINAPI WSAStartup_Hook(
     WORD wVersionRequired,
     LPWSADATA lpWSAData
 ) {
-    PreHook("WSAStartup");
-    MessageBoxA(NULL, "Hooked WSAStartup", "debug", MB_OK);
+    PreHook(1, "WSAStartup");
+    // TODO: interactive
     ExitProcess(1);
     return orig_WSAStartup(wVersionRequired, lpWSAData);
 }
@@ -89,10 +86,8 @@ HINTERNET InternetOpenUrlA_Hook(
 	DWORD     dwFlags,
 	DWORD_PTR dwContext
 ) {
-    PreHook("InternetOpenUrlA");
-
-    // InternetOpenUrlA_Hook
-    MessageBoxA(NULL, "Hooked InternetOpenUrlA", "debug", MB_OK);
+    PreHook(1, "InternetOpenUrlA");
+    // TODO: interactive
     ExitProcess(1);
     return orig_InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwFlags, dwContext);
 }
@@ -108,9 +103,10 @@ LSTATUS WINAPI RegCreateKeyExA_Hook(
     PHKEY phkResult,
     LPDWORD lpdwDisposition
 ) {
-    PreHook("RegCreateKeyExA");
     // スタートアップレジストリへの登録の検知
     if ((_stricmp(lpSubKey, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)){
+        PreHook(3, "RegCreateKeyExA", lpSubKey, "KEY_SET_VALUE");
+        // TODO: interactive
         ExitProcess(1);
     }
 
@@ -124,10 +120,8 @@ bool WINAPI WriteFile_Hook(
     LPDWORD      lpNumberOfBytesWritten,
     LPOVERLAPPED lpOverlapped
 ) {
-    PreHook("WriteFile");
-
-    // WriteFile
-    MessageBoxA(NULL, "Hooked WriteFile", "debug", MB_OK);
+    PreHook(1, "WriteFile");
+    // TODO: interactive
     ExitProcess(1);
     return orig_WriteFile(hFile, lpBuffer, nNumberOfBytesToWrite, lpNumberOfBytesWritten, lpOverlapped);
 }
@@ -135,20 +129,18 @@ bool WINAPI WriteFile_Hook(
 bool WINAPI DeleteFileW_Hook(
     LPCWSTR lpFileName
 ) {
-    PreHook("DeleteFileW");
+    PreHook(1, "DeleteFileW");
     // DeleteFileWの実行を検知
     ExitProcess(1);
-
     return orig_DeleteFileW(lpFileName);
 }
 
 bool WINAPI DeleteFileA_Hook(
     LPCSTR lpFileName
 ) {
-    PreHook("DeleteFileA");
+    PreHook(1, "DeleteFileA");
     // DeleteFileAの実行を検知
     ExitProcess(1);
-
     return orig_DeleteFileA(lpFileName);
 }
 
@@ -156,9 +148,8 @@ BOOL WINAPI MoveFileW_Hook(
     LPCTSTR lpExistingFileName,
     LPCTSTR lpNewFileName
 ) {
-    PreHook("MoveFileW");
+    PreHook(1, "MoveFileW");
     // MoveFile Hook
-    MessageBoxA(NULL, "Hooked MoveFileW", "debug", MB_OK);
     ExitProcess(1);
     return orig_MoveFileW(lpExistingFileName, lpNewFileName);
 }
