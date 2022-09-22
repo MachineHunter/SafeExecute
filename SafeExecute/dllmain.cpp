@@ -1,11 +1,13 @@
 ﻿#include "pch.h"
 #include "hook.h"
 #include "readchecklist.h"
+#include "readmode.h"
 
 char processPath[MAX_PATH];
 
 DWORD WINAPI ThreadMain(LPVOID params) {
     GetModuleFileNameA(NULL, processPath, MAX_PATH);
+    ReadMode();
     ReadCheckList();
     Hook();
     return 0;

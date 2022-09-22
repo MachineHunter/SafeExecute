@@ -1,14 +1,7 @@
 #include "pch.h"
 #include "prehook.h"
 
-void PreHook(int argc, ...) {
-	va_list vl;
-	va_start(vl, argc);
-
-	std::vector<char*> argv;
-	for (int i = 0; i < argc; i++)
-		argv.push_back(va_arg(vl, char*));
-
+void LogHookedApi(int argc, VCHAR argv) {
 	char path[MAX_PATH];
 	GetCurrentDirectoryA(MAX_PATH, path);
 	strcat_s(path, "\\logs");
@@ -45,11 +38,45 @@ void PreHook(int argc, ...) {
 		strcat_s(buf, "\n");
 
 		WriteFile(hFile, buf, strlen(buf), &writesize, NULL);
-
 		CloseHandle(hFile);
+		return;
 	}
 	else {
 		MessageBoxA(NULL, "Please execute SafeExecutor from project home directory", "PreHook Error", MB_OK | MB_ICONERROR);
 		ExitProcess(1);
 	}
+}
+
+void PreHook(int argc, ...) {
+	va_list vl;
+	va_start(vl, argc);
+	VCHAR argv;
+	for (int i = 0; i < argc; i++)
+		argv.push_back(va_arg(vl, char*));
+
+	LogHookedApi(argc, argv);
+
+	switch (MODE)
+	{
+	case MODE_NORMAL:
+		ExitProcess(1);
+		break;
+	case MODE_ERRORDISPLAY:
+		char buf[256];
+		snprintf(buf, 256, "Hooked %s", argv[0]);
+		if (argc > 1) strcat_s(buf, "\nArguments:");
+		for (int i = 1; i < argc; i++) {
+			strcat_s(buf, "\n");
+			char buf2[10];
+			snprintf(buf2, 10, "%2d: ", i);
+			strcat_s(buf, buf2);
+			strcat_s(buf, argv[i]);
+		}
+		MessageBoxA(NULL, buf, "SafeExecute Detection", MB_OK);
+		ExitProcess(1);
+		break;
+	default:
+		break;
+	}
+	return;
 }
