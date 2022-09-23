@@ -8,3 +8,4 @@ WriteFile,1
 DeleteFileW,1
 DeleteFileA,1
 MoveFileW,1
+CryptDecrypt,1

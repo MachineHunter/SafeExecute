@@ -2,6 +2,8 @@
 #include "hook.h"
 #include <wininet.h>
 
+int res;
+
 // ================================== フックを追加する場合は、ここから =====================================================
 
 // 1: WindowsAPIの関数型の定義
@@ -15,6 +17,7 @@ typedef BOOL(WINAPI* WRITEFILE)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfB
 typedef BOOL(WINAPI* DELETEFILEW)(LPCWSTR lpFileName);
 typedef BOOL(WINAPI* DELETEFILEA)(LPCSTR lpFileName);
 typedef BOOL(WINAPI* MOVEFILEW)(LPCTSTR lpExistingFileName, LPCTSTR lpNewFileName);
+typedef BOOL(WINAPI* CRYPTDECRYPT)(HCRYPTKEY hKey, HCRYPTHASH hHash, BOOL Final, DWORD dwFlags, BYTE* pbData, DWORD* pdwDataLen);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 CREATEPROCESSA orig_CreateProcessA;
@@ -25,6 +28,7 @@ WRITEFILE orig_WriteFile;
 DELETEFILEW orig_DeleteFileW;
 DELETEFILEA orig_DeleteFileA;
 MOVEFILEW orig_MoveFileW;
+CRYPTDECRYPT orig_CryptDecrypt;
 
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
@@ -154,6 +158,21 @@ BOOL WINAPI MoveFileW_Hook(
     return orig_MoveFileW(lpExistingFileName, lpNewFileName);
 }
 
+BOOL WINAPI CryptDecrypt_Hook(
+    HCRYPTKEY hKey,
+    HCRYPTHASH hHash,
+    BOOL Final,
+    DWORD dwFlags,
+    BYTE* pbData,
+    DWORD* pdwDataLen
+) {
+    PreHook(1, "CryptDecrypt");
+    res = MsgBox("Crypto Operation Detected\nContinue execution?");
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_CryptDecrypt(hKey, hHash, Final, dwFlags, pbData, pdwDataLen);
+}
+
 
 // 3: フックする全てのWindowsAPIのリスト
 HookList hooklist = {
@@ -166,7 +185,8 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "WriteFile", (void**)&orig_WriteFile, (void*)WriteFile_Hook),
         HookFunc("kernel32.dll", "DeleteFileW", (void**)&orig_DeleteFileW, (void*)DeleteFileW_Hook),
         HookFunc("kernel32.dll", "DeleteFileA", (void**)&orig_DeleteFileA, (void*)DeleteFileA_Hook),
-        HookFunc("kernel32.dll", "MoveFileW", (void**)&orig_MoveFileW, (void*)MoveFileW_Hook)
+        HookFunc("kernel32.dll", "MoveFileW", (void**)&orig_MoveFileW, (void*)MoveFileW_Hook),
+        HookFunc("advapi32.dll", "CryptDecrypt", (void**)&orig_CryptDecrypt, (void*)CryptDecrypt_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================

@@ -5,8 +5,12 @@
 #include <WinSock2.h>
 #include "ordinals.h"
 #include <Dbghelp.h>
+#include <Wincrypt.h>
 #include <processthreadsapi.h>
 #pragma comment(lib, "Dbghelp")
+#pragma comment(lib, "crypt32.lib")
+
+#define MsgBox(X) MessageBoxA(NULL, X, "SafeExecute", MB_YESNO)
 
 extern char processPath[MAX_PATH];
 
