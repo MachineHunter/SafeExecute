@@ -72,7 +72,7 @@ void PreHook(int argc, ...) {
 			strcat_s(buf, buf2);
 			strcat_s(buf, argv[i]);
 		}
-		MessageBoxA(NULL, buf, "SafeExecute Detection", MB_OK);
+		MessageBoxA(NULL, buf, "SafeExecute", MB_OK);
 		ExitProcess(1);
 		break;
 	default:
