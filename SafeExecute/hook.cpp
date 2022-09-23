@@ -15,6 +15,7 @@ typedef BOOL(WINAPI* WRITEFILE)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfB
 typedef BOOL(WINAPI* DELETEFILEW)(LPCWSTR lpFileName);
 typedef BOOL(WINAPI* DELETEFILEA)(LPCSTR lpFileName);
 typedef BOOL(WINAPI* MOVEFILEW)(LPCTSTR lpExistingFileName, LPCTSTR lpNewFileName);
+typedef BOOL(WINAPI* MOVEFILEEXA)(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, DWORD  dwFlags);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 CREATEPROCESSA orig_CreateProcessA;
@@ -25,6 +26,7 @@ WRITEFILE orig_WriteFile;
 DELETEFILEW orig_DeleteFileW;
 DELETEFILEA orig_DeleteFileA;
 MOVEFILEW orig_MoveFileW;
+MOVEFILEEXA orig_MoveFileExA;
 
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
@@ -154,6 +156,17 @@ BOOL WINAPI MoveFileW_Hook(
     return orig_MoveFileW(lpExistingFileName, lpNewFileName);
 }
 
+bool WINAPI MoveFileExA_Hook(
+    LPCSTR lpExistingFileName,
+    LPCSTR lpNewFileName,
+    DWORD  dwFlags
+) {
+    PreHook(1, "MoveFileExA");
+    // MoveFileExA Hook
+    ExitProcess(1);
+    return orig_MoveFileExA(lpExistingFileName, lpNewFileName, dwFlags);
+}
+
 
 // 3: フックする全てのWindowsAPIのリスト
 HookList hooklist = {
@@ -166,7 +179,8 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "WriteFile", (void**)&orig_WriteFile, (void*)WriteFile_Hook),
         HookFunc("kernel32.dll", "DeleteFileW", (void**)&orig_DeleteFileW, (void*)DeleteFileW_Hook),
         HookFunc("kernel32.dll", "DeleteFileA", (void**)&orig_DeleteFileA, (void*)DeleteFileA_Hook),
-        HookFunc("kernel32.dll", "MoveFileW", (void**)&orig_MoveFileW, (void*)MoveFileW_Hook)
+        HookFunc("kernel32.dll", "MoveFileW", (void**)&orig_MoveFileW, (void*)MoveFileW_Hook),
+        HookFunc("kernel32.dll", "MoveFileExA", (void**)&orig_MoveFileExA, (void*)MoveFileExA_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================
