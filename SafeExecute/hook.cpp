@@ -43,8 +43,7 @@ bool WINAPI SetFileAttributesA_Hook(
     // 自分自身を隠しファイル化する挙動の検知
     if ((strcmp(lpFileName, processPath) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
         PreHook(3, "SetFileAttributesA", lpFileName, "FILE_ATTRIBUTE_HIDDEN");
-        // interactive mode
-        res = MsgBox("Making oneself hidden file Detected\nContinue execution?");
+        res = MsgBox("This executable is trying to make itself a hidden file\nContinue execution?");
         if (res == IDNO)
             ExitProcess(1);
     }
@@ -62,8 +61,7 @@ bool WINAPI SetFileAttributesW_Hook(
     // 自分自身を隠しファイル化する挙動の検知
     if ((wcscmp(lpFileName, text_wchar) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
         PreHook(3, "SetFileAttributesW", WStringToString(lpFileName).c_str(), "FILE_ATTRIBUTE_HIDDEN");
-        // interactive mode
-        res = MsgBox("Making oneself hidden file Detected\nContinue execution?");
+        res = MsgBox("This executable is trying to make itself a hidden file\nContinue execution?");
         if (res == IDNO)
             ExitProcess(1);
     }
