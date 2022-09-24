@@ -47,3 +47,5 @@ typedef std::vector<HookFunc> HookList;
 extern HookList hooklist;
 
 void Hook();
+
+std::string WStringToString(const std::wstring& s);
