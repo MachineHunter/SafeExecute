@@ -11,7 +11,7 @@ typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttribut
 typedef BOOL(WINAPI* SETFILEATTRIBUTESW)(LPCWSTR lpFileName, DWORD dwFileAttributes);
 typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
 typedef BOOL(WINAPI* CREATEPROCESSA)(PCTSTR pszApplicationName, PTSTR  pszCommandLine, PSECURITY_ATTRIBUTES psaProcess, PSECURITY_ATTRIBUTES psaThread, BOOL   bInheritHandles, DWORD  fdwCreate, PVOID  pvEnvironment, PCTSTR pszCurDir, LPSTARTUPINFO  psiStartInfo, PPROCESS_INFORMATION ppiProcInfo);
-typedef int(WINAPI* WSASTARTUP)(WORD wVersionRequired, LPWSADATA lpWSAData);
+typedef INT(WSAAPI* INETPTON)(INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
 typedef HINTERNET (WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXA)(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXW)(HKEY hKey, LPCWSTR lpSubKey, DWORD Reserved, LPWSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
@@ -24,7 +24,7 @@ SETFILEATTRIBUTESA orig_SetFileAttributesA;
 SETFILEATTRIBUTESW orig_SetFileAttributesW;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 CREATEPROCESSA orig_CreateProcessA;
-WSASTARTUP orig_WSAStartup;
+INETPTON orig_inet_pton;
 INTERNETOPENURLA orig_InternetOpenUrlA;
 REGCREATEKEYEXA orig_RegCreateKeyExA;
 REGCREATEKEYEXW orig_RegCreateKeyExW;
@@ -36,7 +36,7 @@ CRYPTDECRYPT orig_CryptDecrypt;
 
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
-// （※ 関数冒頭で PreHook() を必ず呼んで欲しいです...!）
+// （※ PreHook() を必ず呼んで欲しいです...!）
 bool WINAPI SetFileAttributesA_Hook(
     LPCSTR lpFileName,
     DWORD dwFileAttributes
@@ -95,14 +95,18 @@ bool WINAPI CreateProcessA_Hook(
     return orig_CreateProcessA(pszApplicationName, pszCommandLine, psaProcess, psaThread, bInheritHandles, fdwCreate, pvEnvironment, pszCurDir, psiStartInfo, ppiProcInfo);
 }
 
-int WINAPI WSAStartup_Hook(
-    WORD wVersionRequired,
-    LPWSADATA lpWSAData
+int WSAAPI inet_pton_Hook(
+    INT Family,
+    PCSTR pszAddrString,
+    PVOID pAddrBuf
 ) {
-    PreHook(1, "WSAStartup");
-    // TODO: interactive
-    ExitProcess(1);
-    return orig_WSAStartup(wVersionRequired, lpWSAData);
+    PreHook(1, "inet_pton");
+    char buf[300];
+    snprintf(buf, 300, "This executable attempt to access IP address below\n%s\nContinue execution?", pszAddrString);
+    res = MsgBox(buf);
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_inet_pton(Family, pszAddrString, pAddrBuf);
 }
 
 HINTERNET InternetOpenUrlA_Hook(
@@ -114,8 +118,11 @@ HINTERNET InternetOpenUrlA_Hook(
 	DWORD_PTR dwContext
 ) {
     PreHook(1, "InternetOpenUrlA");
-    // TODO: interactive
-    ExitProcess(1);
+    char buf[300];
+    snprintf(buf, 300, "This executable attempt to access URL below\n%s\nContinue execution?", lpszUrl);
+    res = MsgBox(buf);
+    if (res == IDNO)
+        ExitProcess(1);
     return orig_InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwFlags, dwContext);
 }
 
@@ -226,7 +233,7 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesW", (void**)&orig_SetFileAttributesW, (void*)SetFileAttributesW_Hook),
         HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook),
         HookFunc("kernel32.dll", "CreateProcessA", (void**)&orig_CreateProcessA, (void*)CreateProcessA_Hook),
-        HookFunc("ws2_32.dll", WSAStartup_Ordinal, (void**)&orig_WSAStartup, (void*)WSAStartup_Hook),
+        HookFunc("ws2_32.dll", "inet_pton", (void**)&orig_inet_pton, (void*)inet_pton_Hook),
         HookFunc("WinInet.dll", "InternetOpenUrlA", (void**)&orig_InternetOpenUrlA, (void*)InternetOpenUrlA_Hook),
         HookFunc("advapi32.dll", "RegCreateKeyExA", (void**)&orig_RegCreateKeyExA, (void*)RegCreateKeyExA_Hook),
         HookFunc("advapi32.dll", "RegCreateKeyExW", (void**)&orig_RegCreateKeyExW, (void*)RegCreateKeyExW_Hook),
