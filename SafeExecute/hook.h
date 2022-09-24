@@ -5,8 +5,12 @@
 #include <WinSock2.h>
 #include "ordinals.h"
 #include <Dbghelp.h>
+#include <Wincrypt.h>
 #include <processthreadsapi.h>
 #pragma comment(lib, "Dbghelp")
+#pragma comment(lib, "crypt32.lib")
+
+#define MsgBox(X) MessageBoxA(NULL, X, "SafeExecute", MB_YESNO)
 
 extern char processPath[MAX_PATH];
 
@@ -27,7 +31,7 @@ typedef struct HookFunc {
         origfunc = _origfunc;
         hook = _hook;
         isOrdinal = false;
-        isChecked = true; // TODO: ƒfƒvƒƒCŽž‚Ífalse‚É
+        isChecked = true; // TODO: ãƒ‡ãƒ—ãƒ­ã‚¤æ™‚ã¯falseã«
     }
 
     HookFunc(const char* _dllname, DWORD _ordinal, void** _origfunc, void* _hook) {
@@ -36,10 +40,12 @@ typedef struct HookFunc {
         origfunc = _origfunc;
         hook = _hook;
         isOrdinal = true;
-        isChecked = true; // TODO: ƒfƒvƒƒCŽž‚Ífalse‚É
+        isChecked = true; // TODO: ãƒ‡ãƒ—ãƒ­ã‚¤æ™‚ã¯falseã«
     }
 };
 typedef std::vector<HookFunc> HookList;
 extern HookList hooklist;
 
 void Hook();
+
+std::string WStringToString(const std::wstring& s);
