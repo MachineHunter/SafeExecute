@@ -19,6 +19,8 @@ typedef BOOL(WINAPI* WRITEFILE)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfB
 typedef BOOL(WINAPI* DELETEFILEW)(LPCWSTR lpFileName);
 typedef BOOL(WINAPI* DELETEFILEA)(LPCSTR lpFileName);
 typedef BOOL(WINAPI* MOVEFILEW)(LPCTSTR lpExistingFileName, LPCTSTR lpNewFileName);
+typedef BOOL(WINAPI* MOVEFILEEXA)(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, DWORD  dwFlags);
+typedef BOOL(WINAPI* MOVEFILEEXW)(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, DWORD  dwFlags);
 typedef BOOL(WINAPI* CRYPTDECRYPT)(HCRYPTKEY hKey, HCRYPTHASH hHash, BOOL Final, DWORD dwFlags, BYTE* pbData, DWORD* pdwDataLen);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 SETFILEATTRIBUTESW orig_SetFileAttributesW;
@@ -32,6 +34,8 @@ WRITEFILE orig_WriteFile;
 DELETEFILEW orig_DeleteFileW;
 DELETEFILEA orig_DeleteFileA;
 MOVEFILEW orig_MoveFileW;
+MOVEFILEEXA orig_MoveFileExA;
+MOVEFILEEXW orig_MoveFileExW;
 CRYPTDECRYPT orig_CryptDecrypt;
 
 
@@ -211,6 +215,40 @@ BOOL WINAPI MoveFileW_Hook(
     return orig_MoveFileW(lpExistingFileName, lpNewFileName);
 }
 
+bool WINAPI MoveFileExA_Hook(
+    LPCSTR lpExistingFileName,
+    LPCSTR lpNewFileName,
+    DWORD  dwFlags
+) {
+    PreHook(1, "MoveFileExA");
+
+    char buf_msg[128];
+    sprintf_s(buf_msg, "This executable is trying to rename %s to %s\nContinue execution ? ", lpExistingFileName, lpNewFileName);
+    res = MsgBox(buf_msg);
+
+    if (res == IDNO)
+        ExitProcess(1);
+
+    return orig_MoveFileExA(lpExistingFileName, lpNewFileName, dwFlags);
+}
+
+bool WINAPI MoveFileExW_Hook(
+    LPCWSTR lpExistingFileName,
+    LPCWSTR lpNewFileName,
+    DWORD  dwFlags
+) {
+    PreHook(1, "MoveFileExW");
+    
+    char buf_msg[128];
+    sprintf_s(buf_msg, "This executable is trying to rename %S to %S\nContinue execution ? ", lpExistingFileName, lpNewFileName);
+    res = MsgBox(buf_msg);
+
+    if (res == IDNO)
+        ExitProcess(1);
+
+    return orig_MoveFileExW(lpExistingFileName, lpNewFileName, dwFlags);
+}
+
 BOOL WINAPI CryptDecrypt_Hook(
     HCRYPTKEY hKey,
     HCRYPTHASH hHash,
@@ -241,6 +279,8 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "DeleteFileW", (void**)&orig_DeleteFileW, (void*)DeleteFileW_Hook),
         HookFunc("kernel32.dll", "DeleteFileA", (void**)&orig_DeleteFileA, (void*)DeleteFileA_Hook),
         HookFunc("kernel32.dll", "MoveFileW", (void**)&orig_MoveFileW, (void*)MoveFileW_Hook),
+        HookFunc("kernel32.dll", "MoveFileExA", (void**)&orig_MoveFileExA, (void*)MoveFileExA_Hook),
+        HookFunc("kernel32.dll", "MoveFileExW", (void**)&orig_MoveFileExW, (void*)MoveFileExW_Hook),
         HookFunc("advapi32.dll", "CryptDecrypt", (void**)&orig_CryptDecrypt, (void*)CryptDecrypt_Hook)
 };
 
