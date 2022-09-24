@@ -112,8 +112,7 @@ LSTATUS WINAPI RegCreateKeyExA_Hook(
     // スタートアップレジストリへの登録の検知
     if ((_stricmp(lpSubKey, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)){
         PreHook(3, "RegCreateKeyExA", lpSubKey, "KEY_SET_VALUE");
-        // interactive mode
-        res = MsgBox("Registration to startup registry datected\nContinue execution?");
+        res = MsgBox("Registration to startup registry detected\nBy doing this, the executable will automatically runs on system startup.\nContinue execution?");
         if (res == IDNO)
             ExitProcess(1);
     }
@@ -133,11 +132,10 @@ LSTATUS WINAPI RegCreateKeyExW_Hook(
     LPDWORD lpdwDisposition
 ) { 
     // スタートアップレジストリへの登録の検知
-    if ((wcscmp(lpSubKey, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)) {
+    if ((_wcsicmp(lpSubKey, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)) {
         setlocale(LC_ALL, "Japanese");
         PreHook(3, "RegCreateKeyExW", WStringToString(lpSubKey).c_str(), "KEY_SET_VALUE");
-        // interactive mode
-        res = MsgBox("Registration to startup registry datected\nContinue execution?");
+        res = MsgBox("Registration to startup registry detected\nBy doing this, the executable will automatically runs on system startup.\nContinue execution?");
         if(res == IDNO)
             ExitProcess(1);
     }
