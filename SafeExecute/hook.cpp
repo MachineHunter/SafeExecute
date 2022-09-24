@@ -132,8 +132,6 @@ LSTATUS WINAPI RegCreateKeyExW_Hook(
     PHKEY phkResult,
     LPDWORD lpdwDisposition
 ) { 
-    //LPCWSTR c = ;
-
     // スタートアップレジストリへの登録の検知
     if ((wcscmp(lpSubKey, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)) {
         PreHook(3, "RegCreateKeyExW", lpSubKey, "KEY_SET_VALUE");
@@ -142,9 +140,7 @@ LSTATUS WINAPI RegCreateKeyExW_Hook(
         if(res == IDNO)
             ExitProcess(1);
     }
-
     return orig_RegCreateKeyExW(hkey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes, phkResult, lpdwDisposition);
-
 }
 
 bool WINAPI WriteFile_Hook(

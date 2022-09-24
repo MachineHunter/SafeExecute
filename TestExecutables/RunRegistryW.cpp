@@ -5,8 +5,6 @@ int main(void) {
 	HKEY hKey;
 	DWORD dwDisposition;
 
-	//LPCSTR c = ;
-
 	RegCreateKeyExW(
 		HKEY_CURRENT_USER,
 		L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
