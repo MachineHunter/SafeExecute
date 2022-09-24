@@ -134,7 +134,8 @@ LSTATUS WINAPI RegCreateKeyExW_Hook(
 ) { 
     // スタートアップレジストリへの登録の検知
     if ((wcscmp(lpSubKey, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)) {
-        PreHook(3, "RegCreateKeyExW", lpSubKey, "KEY_SET_VALUE");
+        setlocale(LC_ALL, "Japanese");
+        PreHook(3, "RegCreateKeyExW", WStringToString(lpSubKey).c_str(), "KEY_SET_VALUE");
         // interactive mode
         res = MsgBox("Registration to startup registry datected\nContinue execution?");
         if(res == IDNO)
@@ -256,4 +257,12 @@ void Hook() {
             }
         }
     }
+}
+
+
+std::string WStringToString(const std::wstring& s)
+{
+    std::string temp(s.length(), ' ');
+    std::copy(s.begin(), s.end(), temp.begin());
+    return temp;
 }
