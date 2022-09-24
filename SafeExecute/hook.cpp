@@ -17,6 +17,7 @@ typedef BOOL(WINAPI* WRITEFILE)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfB
 typedef BOOL(WINAPI* DELETEFILEW)(LPCWSTR lpFileName);
 typedef BOOL(WINAPI* DELETEFILEA)(LPCSTR lpFileName);
 typedef BOOL(WINAPI* MOVEFILEW)(LPCTSTR lpExistingFileName, LPCTSTR lpNewFileName);
+typedef BOOL(WINAPI* MOVEFILEA)(LPCTSTR lpExistingFileName, LPCTSTR lpNewFileName);
 typedef BOOL(WINAPI* CRYPTDECRYPT)(HCRYPTKEY hKey, HCRYPTHASH hHash, BOOL Final, DWORD dwFlags, BYTE* pbData, DWORD* pdwDataLen);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
@@ -28,6 +29,7 @@ WRITEFILE orig_WriteFile;
 DELETEFILEW orig_DeleteFileW;
 DELETEFILEA orig_DeleteFileA;
 MOVEFILEW orig_MoveFileW;
+MOVEFILEA orig_MoveFileA;
 CRYPTDECRYPT orig_CryptDecrypt;
 
 
@@ -153,9 +155,19 @@ BOOL WINAPI MoveFileW_Hook(
     LPCTSTR lpNewFileName
 ) {
     PreHook(1, "MoveFileW");
-    // MoveFile Hook
+    // MoveFileW Hook
     ExitProcess(1);
     return orig_MoveFileW(lpExistingFileName, lpNewFileName);
+}
+
+BOOL WINAPI MoveFileA_Hook(
+    LPCTSTR lpExistingFileName,
+    LPCTSTR lpNewFileName
+) {
+    PreHook(1, "MoveFileA");
+    // MoveFileA Hook
+    ExitProcess(1);
+    return orig_MoveFileA(lpExistingFileName, lpNewFileName);
 }
 
 BOOL WINAPI CryptDecrypt_Hook(
@@ -186,6 +198,7 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "DeleteFileW", (void**)&orig_DeleteFileW, (void*)DeleteFileW_Hook),
         HookFunc("kernel32.dll", "DeleteFileA", (void**)&orig_DeleteFileA, (void*)DeleteFileA_Hook),
         HookFunc("kernel32.dll", "MoveFileW", (void**)&orig_MoveFileW, (void*)MoveFileW_Hook),
+        HookFunc("kernel32.dll", "MoveFileA", (void**)&orig_MoveFileA, (void*)MoveFileA_Hook),
         HookFunc("advapi32.dll", "CryptDecrypt", (void**)&orig_CryptDecrypt, (void*)CryptDecrypt_Hook)
 };
 
