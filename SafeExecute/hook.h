@@ -31,7 +31,7 @@ typedef struct HookFunc {
         origfunc = _origfunc;
         hook = _hook;
         isOrdinal = false;
-        isChecked = true; // TODO: ƒfƒvƒƒCŽž‚Ífalse‚É
+        isChecked = true; // TODO: ãƒ‡ãƒ—ãƒ­ã‚¤æ™‚ã¯falseã«
     }
 
     HookFunc(const char* _dllname, DWORD _ordinal, void** _origfunc, void* _hook) {
@@ -40,7 +40,7 @@ typedef struct HookFunc {
         origfunc = _origfunc;
         hook = _hook;
         isOrdinal = true;
-        isChecked = true; // TODO: ƒfƒvƒƒCŽž‚Ífalse‚É
+        isChecked = true; // TODO: ãƒ‡ãƒ—ãƒ­ã‚¤æ™‚ã¯falseã«
     }
 };
 typedef std::vector<HookFunc> HookList;

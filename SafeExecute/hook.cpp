@@ -8,6 +8,7 @@ int res;
 
 // 1: WindowsAPIの関数型の定義
 typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttributes);
+typedef BOOL(WINAPI* SETFILEATTRIBUTESW)(LPCWSTR lpFileName, DWORD dwFileAttributes);
 typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
 typedef BOOL(WINAPI* CREATEPROCESSA)(PCTSTR pszApplicationName, PTSTR  pszCommandLine, PSECURITY_ATTRIBUTES psaProcess, PSECURITY_ATTRIBUTES psaThread, BOOL   bInheritHandles, DWORD  fdwCreate, PVOID  pvEnvironment, PCTSTR pszCurDir, LPSTARTUPINFO  psiStartInfo, PPROCESS_INFORMATION ppiProcInfo);
 typedef int(WINAPI* WSASTARTUP)(WORD wVersionRequired, LPWSADATA lpWSAData);
@@ -20,6 +21,7 @@ typedef BOOL(WINAPI* DELETEFILEA)(LPCSTR lpFileName);
 typedef BOOL(WINAPI* MOVEFILEW)(LPCTSTR lpExistingFileName, LPCTSTR lpNewFileName);
 typedef BOOL(WINAPI* CRYPTDECRYPT)(HCRYPTKEY hKey, HCRYPTHASH hHash, BOOL Final, DWORD dwFlags, BYTE* pbData, DWORD* pdwDataLen);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
+SETFILEATTRIBUTESW orig_SetFileAttributesW;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 CREATEPROCESSA orig_CreateProcessA;
 WSASTARTUP orig_WSAStartup;
@@ -43,10 +45,29 @@ bool WINAPI SetFileAttributesA_Hook(
     // 自分自身を隠しファイル化する挙動の検知
     if ((strcmp(lpFileName, processPath) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
         PreHook(3, "SetFileAttributesA", lpFileName, "FILE_ATTRIBUTE_HIDDEN");
-        // TODO: interactive
-        ExitProcess(1);
+        res = MsgBox("This executable is trying to make itself a hidden file\nContinue execution?");
+        if (res == IDNO)
+            ExitProcess(1);
     }
     return orig_SetFileAttributesA(lpFileName, dwFileAttributes);
+}
+
+bool WINAPI SetFileAttributesW_Hook(
+    LPCWSTR lpFileName,
+    DWORD dwFileAttributes
+) {
+    wchar_t text_wchar[MAX_PATH] = {};
+    size_t pReturnValue = 0;
+    mbstowcs_s(&pReturnValue, text_wchar, MAX_PATH, processPath, MAX_PATH);
+
+    // 自分自身を隠しファイル化する挙動の検知
+    if ((wcscmp(lpFileName, text_wchar) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
+        PreHook(3, "SetFileAttributesW", WStringToString(lpFileName).c_str(), "FILE_ATTRIBUTE_HIDDEN");
+        res = MsgBox("This executable is trying to make itself a hidden file\nContinue execution?");
+        if (res == IDNO)
+            ExitProcess(1);
+    }
+    return orig_SetFileAttributesW(lpFileName, dwFileAttributes);
 }
 
 bool WINAPI IsDebuggerPresent_Hook() {
@@ -202,6 +223,7 @@ BOOL WINAPI CryptDecrypt_Hook(
 // 3: フックする全てのWindowsAPIのリスト
 HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
+        HookFunc("kernel32.dll", "SetFileAttributesW", (void**)&orig_SetFileAttributesW, (void*)SetFileAttributesW_Hook),
         HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook),
         HookFunc("kernel32.dll", "CreateProcessA", (void**)&orig_CreateProcessA, (void*)CreateProcessA_Hook),
         HookFunc("ws2_32.dll", WSAStartup_Ordinal, (void**)&orig_WSAStartup, (void*)WSAStartup_Hook),
