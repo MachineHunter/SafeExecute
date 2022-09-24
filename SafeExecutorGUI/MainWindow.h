@@ -2,7 +2,11 @@
 #include <Windows.h>
 #include <msclr/marshal.h>
 #include "Shlwapi.h"
+#include <vector>
 #pragma comment(lib, "shlwapi.lib")
+
+typedef System::Collections::Generic::Queue<TreeNode^> NodeQueue;
+typedef System::Collections::Generic::List<String^> StrList;
 
 namespace SafeExecutorGUI {
 
@@ -22,11 +26,59 @@ namespace SafeExecutorGUI {
 	public:
 		MainWindow(void)
 		{
+			static System::Collections::Generic::Dictionary<String^, System::Collections::Generic::List<String^>^>^ apiDict = gcnew System::Collections::Generic::Dictionary<String^, System::Collections::Generic::List<String^>^>();
+
 			InitializeComponent();
 			//
 			//TODO: ここにコンストラクター コードを追加します
-			//
-		}
+			//apiDic
+
+			//ファイル操作
+			array<TreeNode^>^ nodChildFiles = {
+				gcnew TreeNode("ファイル名変更"),
+				gcnew TreeNode("ファイル削除"),
+				gcnew TreeNode("ファイル書き込み")
+			};
+
+			TreeNode^ nodFile = gcnew TreeNode("ファイル操作", nodChildFiles);
+			treeView->Nodes->Add(nodFile);
+
+			//インターネット接続
+			array<TreeNode^>^ nodChildNet = {
+				gcnew TreeNode("WinSock"),
+				gcnew TreeNode("WinInet"),
+			};
+
+			TreeNode^ nodNet = gcnew TreeNode("インターネット接続", nodChildNet);
+			treeView->Nodes->Add(nodNet);
+
+
+			//レジストリ操作
+			array<TreeNode^>^ nodChildRegistory= {
+				gcnew TreeNode("RUNレジストリへの登録"),
+			};
+
+			TreeNode^ nodRegistory = gcnew TreeNode("レジストリ操作", nodChildRegistory);
+			treeView->Nodes->Add(nodRegistory);
+
+			//プロセス操作
+			array<TreeNode^>^ nodChildProcess = {
+				gcnew TreeNode("子プロセスの生成"),
+			};
+
+			TreeNode^ nodProcess = gcnew TreeNode("レジストリ操作", nodChildProcess);
+			treeView->Nodes->Add(nodProcess);
+	
+			//マルウェアっぽい挙動
+			array<TreeNode^>^ nodChildMalware = {
+				gcnew TreeNode("デバッガ検知"),
+				gcnew TreeNode("暗号化処理"),
+				gcnew TreeNode("自分自身の隠しファイル化"),
+			};
+
+			TreeNode^ nodMalware= gcnew TreeNode("マルウェアっぽい挙動", nodChildMalware);
+			treeView->Nodes->Add(nodMalware);
+	}
 
 	protected:
 		/// <summary>
@@ -46,6 +98,9 @@ namespace SafeExecutorGUI {
 	private: System::Windows::Forms::Button^ FileSelectBtn;
 	private: System::Windows::Forms::TextBox^ FileSelectTextBox;
 	private: System::Windows::Forms::Button^ ExecBtn;
+	private: System::Windows::Forms::TreeView^ treeView;
+
+
 
 	private:
 		/// <summary>
@@ -65,8 +120,10 @@ namespace SafeExecutorGUI {
 			this->FileSelectBtn = (gcnew System::Windows::Forms::Button());
 			this->FileSelectTextBox = (gcnew System::Windows::Forms::TextBox());
 			this->checklist_panel = (gcnew System::Windows::Forms::Panel());
+			this->treeView = (gcnew System::Windows::Forms::TreeView());
 			this->output_panel = (gcnew System::Windows::Forms::Panel());
 			this->target_exe_selection_panel->SuspendLayout();
+			this->checklist_panel->SuspendLayout();
 			this->SuspendLayout();
 			// 
 			// target_exe_selection_panel
@@ -77,16 +134,16 @@ namespace SafeExecutorGUI {
 			this->target_exe_selection_panel->Controls->Add(this->FileSelectTextBox);
 			this->target_exe_selection_panel->Dock = System::Windows::Forms::DockStyle::Top;
 			this->target_exe_selection_panel->Location = System::Drawing::Point(0, 0);
-			this->target_exe_selection_panel->Margin = System::Windows::Forms::Padding(4);
 			this->target_exe_selection_panel->Name = L"target_exe_selection_panel";
-			this->target_exe_selection_panel->Size = System::Drawing::Size(1148, 208);
+			this->target_exe_selection_panel->Size = System::Drawing::Size(861, 166);
 			this->target_exe_selection_panel->TabIndex = 0;
 			// 
 			// ExecBtn
 			// 
-			this->ExecBtn->Location = System::Drawing::Point(878, 81);
+			this->ExecBtn->Location = System::Drawing::Point(658, 65);
+			this->ExecBtn->Margin = System::Windows::Forms::Padding(2);
 			this->ExecBtn->Name = L"ExecBtn";
-			this->ExecBtn->Size = System::Drawing::Size(75, 31);
+			this->ExecBtn->Size = System::Drawing::Size(56, 25);
 			this->ExecBtn->TabIndex = 2;
 			this->ExecBtn->Text = L"実行";
 			this->ExecBtn->UseVisualStyleBackColor = true;
@@ -94,9 +151,10 @@ namespace SafeExecutorGUI {
 			// 
 			// FileSelectBtn
 			// 
-			this->FileSelectBtn->Location = System::Drawing::Point(780, 81);
+			this->FileSelectBtn->Location = System::Drawing::Point(585, 65);
+			this->FileSelectBtn->Margin = System::Windows::Forms::Padding(2);
 			this->FileSelectBtn->Name = L"FileSelectBtn";
-			this->FileSelectBtn->Size = System::Drawing::Size(75, 31);
+			this->FileSelectBtn->Size = System::Drawing::Size(56, 25);
 			this->FileSelectBtn->TabIndex = 1;
 			this->FileSelectBtn->Text = L"参照";
 			this->FileSelectBtn->UseVisualStyleBackColor = true;
@@ -106,44 +164,56 @@ namespace SafeExecutorGUI {
 			// 
 			this->FileSelectTextBox->BackColor = System::Drawing::Color::White;
 			this->FileSelectTextBox->Font = (gcnew System::Drawing::Font(L"MS UI Gothic", 10.2F, System::Drawing::FontStyle::Bold));
-			this->FileSelectTextBox->Location = System::Drawing::Point(72, 84);
+			this->FileSelectTextBox->Location = System::Drawing::Point(54, 67);
+			this->FileSelectTextBox->Margin = System::Windows::Forms::Padding(2);
 			this->FileSelectTextBox->Name = L"FileSelectTextBox";
-			this->FileSelectTextBox->Size = System::Drawing::Size(688, 24);
+			this->FileSelectTextBox->Size = System::Drawing::Size(517, 21);
 			this->FileSelectTextBox->TabIndex = 0;
 			// 
 			// checklist_panel
 			// 
 			this->checklist_panel->BackColor = System::Drawing::SystemColors::ActiveBorder;
+			this->checklist_panel->Controls->Add(this->treeView);
 			this->checklist_panel->Dock = System::Windows::Forms::DockStyle::Fill;
-			this->checklist_panel->Location = System::Drawing::Point(0, 208);
-			this->checklist_panel->Margin = System::Windows::Forms::Padding(4);
+			this->checklist_panel->Location = System::Drawing::Point(0, 166);
 			this->checklist_panel->Name = L"checklist_panel";
-			this->checklist_panel->Size = System::Drawing::Size(1148, 540);
+			this->checklist_panel->Size = System::Drawing::Size(861, 432);
 			this->checklist_panel->TabIndex = 1;
+			// 
+			// treeView
+			// 
+			this->treeView->Anchor = static_cast<System::Windows::Forms::AnchorStyles>((((System::Windows::Forms::AnchorStyles::Top | System::Windows::Forms::AnchorStyles::Bottom)
+				| System::Windows::Forms::AnchorStyles::Left)
+				| System::Windows::Forms::AnchorStyles::Right));
+			this->treeView->CheckBoxes = true;
+			this->treeView->Font = (gcnew System::Drawing::Font(L"MS UI Gothic", 12));
+			this->treeView->Location = System::Drawing::Point(21, 15);
+			this->treeView->Name = L"treeView";
+			this->treeView->Size = System::Drawing::Size(444, 405);
+			this->treeView->TabIndex = 0;
 			// 
 			// output_panel
 			// 
 			this->output_panel->BackColor = System::Drawing::SystemColors::Info;
 			this->output_panel->Dock = System::Windows::Forms::DockStyle::Right;
-			this->output_panel->Location = System::Drawing::Point(643, 208);
-			this->output_panel->Margin = System::Windows::Forms::Padding(4);
+			this->output_panel->Location = System::Drawing::Point(482, 166);
 			this->output_panel->Name = L"output_panel";
-			this->output_panel->Size = System::Drawing::Size(505, 540);
+			this->output_panel->Size = System::Drawing::Size(379, 432);
 			this->output_panel->TabIndex = 2;
 			// 
 			// MainWindow
 			// 
-			this->AutoScaleDimensions = System::Drawing::SizeF(8, 15);
+			this->AutoScaleDimensions = System::Drawing::SizeF(6, 12);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->ClientSize = System::Drawing::Size(1148, 748);
+			this->ClientSize = System::Drawing::Size(861, 598);
 			this->Controls->Add(this->output_panel);
 			this->Controls->Add(this->checklist_panel);
 			this->Controls->Add(this->target_exe_selection_panel);
-			this->Margin = System::Windows::Forms::Padding(4);
 			this->Name = L"MainWindow";
 			this->Text = L"MainWindow";
 			this->target_exe_selection_panel->ResumeLayout(false);
 			this->target_exe_selection_panel->PerformLayout();
+			this->checklist_panel->ResumeLayout(false);
 			this->ResumeLayout(false);
 
 		}
@@ -163,6 +233,50 @@ namespace SafeExecutorGUI {
 		}
 	}
 private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e) {
+	
+	char path[MAX_PATH];
+	GetCurrentDirectoryA(MAX_PATH, path);
+	strcat_s(path, "\\rules");
+
+	if (PathFileExistsA(path)) {
+		strcat_s(path, "\\rules.csv");
+
+		HANDLE hFile;
+		DWORD writesize;
+		if (PathFileExistsA(path)) {
+			hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		}
+		else {
+			hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+
+		}
+		for each(TreeNode ^n in treeView->Nodes)
+		{
+			if (n!= nullptr)
+			{
+				//Using a queue to store and process each node in the TreeView
+				NodeQueue ^staging = gcnew NodeQueue();
+				staging->Enqueue(n);
+
+				while (staging->Count > 0)
+				{
+					n = staging->Dequeue();
+					if (!n->Parent) {
+						if (n->Name == "ファイル名削除") {
+							apiDict["ファイル名削除"][0];
+						}
+					}
+
+					for each(TreeNode ^node in n->Nodes)
+					{
+						staging->Enqueue(node);
+					}
+				}
+			}
+		}
+	}
+
+
 	msclr::interop::marshal_context context;
 	LPCSTR exePath = context.marshal_as<const char*>(FileSelectTextBox->Text);
 	char processPath[MAX_PATH];
