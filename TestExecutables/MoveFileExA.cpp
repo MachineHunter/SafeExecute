@@ -9,7 +9,7 @@ int main(
     // Move a file to the same place
     MessageBoxA(NULL, "Moving \"MoveFileExA.cpp\" to \"MoveFileExA.cpp\"", "debug", MB_OK);
 
-    LPCSTR orig = "./MoveFileEx.cpp";
-    LPCSTR dest = "./MoveFileEx.cpp";
+    LPCSTR orig = "./MoveFileExA.cpp";
+    LPCSTR dest = "./MoveFileExA.cpp";
     return MoveFileExA(orig, dest, MOVEFILE_REPLACE_EXISTING);
 }

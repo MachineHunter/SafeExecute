@@ -2,6 +2,8 @@
 #include "hook.h"
 #include <wininet.h>
 
+int res;
+
 // ================================== フックを追加する場合は、ここから =====================================================
 
 // 1: WindowsAPIの関数型の定義
@@ -16,6 +18,7 @@ typedef BOOL(WINAPI* DELETEFILEW)(LPCWSTR lpFileName);
 typedef BOOL(WINAPI* DELETEFILEA)(LPCSTR lpFileName);
 typedef BOOL(WINAPI* MOVEFILEW)(LPCTSTR lpExistingFileName, LPCTSTR lpNewFileName);
 typedef BOOL(WINAPI* MOVEFILEEXA)(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, DWORD  dwFlags);
+typedef BOOL(WINAPI* MOVEFILEEXW)(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, DWORD  dwFlags);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 CREATEPROCESSA orig_CreateProcessA;
@@ -27,6 +30,7 @@ DELETEFILEW orig_DeleteFileW;
 DELETEFILEA orig_DeleteFileA;
 MOVEFILEW orig_MoveFileW;
 MOVEFILEEXA orig_MoveFileExA;
+MOVEFILEEXW orig_MoveFileExW;
 
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
@@ -162,10 +166,34 @@ bool WINAPI MoveFileExA_Hook(
     DWORD  dwFlags
 ) {
     PreHook(1, "MoveFileExA");
-    // MoveFileExA Hook
-    ExitProcess(1);
+
+    char buf_msg[128];
+    sprintf_s(buf_msg, "This executable is trying to rename %s to %s\nContinue execution ? ", lpExistingFileName, lpNewFileName);
+    res = MsgBox(buf_msg);
+
+    if (res == IDNO)
+        ExitProcess(1);
+
     return orig_MoveFileExA(lpExistingFileName, lpNewFileName, dwFlags);
 }
+
+bool WINAPI MoveFileExW_Hook(
+    LPCWSTR lpExistingFileName,
+    LPCWSTR lpNewFileName,
+    DWORD  dwFlags
+) {
+    PreHook(1, "MoveFileExW");
+    
+    char buf_msg[128];
+    sprintf_s(buf_msg, "This executable is trying to rename %S to %S\nContinue execution ? ", lpExistingFileName, lpNewFileName);
+    res = MsgBox(buf_msg);
+
+    if (res == IDNO)
+        ExitProcess(1);
+
+    return orig_MoveFileExW(lpExistingFileName, lpNewFileName, dwFlags);
+}
+
 
 
 // 3: フックする全てのWindowsAPIのリスト
@@ -180,7 +208,8 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "DeleteFileW", (void**)&orig_DeleteFileW, (void*)DeleteFileW_Hook),
         HookFunc("kernel32.dll", "DeleteFileA", (void**)&orig_DeleteFileA, (void*)DeleteFileA_Hook),
         HookFunc("kernel32.dll", "MoveFileW", (void**)&orig_MoveFileW, (void*)MoveFileW_Hook),
-        HookFunc("kernel32.dll", "MoveFileExA", (void**)&orig_MoveFileExA, (void*)MoveFileExA_Hook)
+        HookFunc("kernel32.dll", "MoveFileExA", (void**)&orig_MoveFileExA, (void*)MoveFileExA_Hook),
+        HookFunc("kernel32.dll", "MoveFileExW", (void**)&orig_MoveFileExW, (void*)MoveFileExW_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================
