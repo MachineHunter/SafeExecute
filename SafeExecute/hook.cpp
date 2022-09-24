@@ -20,6 +20,7 @@ typedef BOOL(WINAPI* DELETEFILEW)(LPCWSTR lpFileName);
 typedef BOOL(WINAPI* DELETEFILEA)(LPCSTR lpFileName);
 typedef BOOL(WINAPI* MOVEFILEW)(LPCTSTR lpExistingFileName, LPCTSTR lpNewFileName);
 typedef BOOL(WINAPI* CRYPTDECRYPT)(HCRYPTKEY hKey, HCRYPTHASH hHash, BOOL Final, DWORD dwFlags, BYTE* pbData, DWORD* pdwDataLen);
+typedef SC_HANDLE(WINAPI* CREATESERVICEA)(SC_HANDLE hSCManager, LPCSTR lpServiceName, LPCSTR lpDisplayName, DWORD dwDesiredAccess, DWORD dwServiceType, DWORD dwStartType, DWORD dwErrorControl, LPCSTR lpBinaryPathName, LPCSTR lpLoadOrderGroup, LPDWORD lpdwTagId, LPCSTR lpDependencies, LPCSTR lpServiceStartName, LPCSTR lpPassword);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 SETFILEATTRIBUTESW orig_SetFileAttributesW;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
@@ -33,6 +34,7 @@ DELETEFILEW orig_DeleteFileW;
 DELETEFILEA orig_DeleteFileA;
 MOVEFILEW orig_MoveFileW;
 CRYPTDECRYPT orig_CryptDecrypt;
+CREATESERVICEA orig_CreateServiceA;
 
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
@@ -226,6 +228,29 @@ BOOL WINAPI CryptDecrypt_Hook(
     return orig_CryptDecrypt(hKey, hHash, Final, dwFlags, pbData, pdwDataLen);
 }
 
+SC_HANDLE WINAPI CreateServiceA_Hook(
+    SC_HANDLE hSCManager,
+    LPCSTR lpServiceName,
+    LPCSTR lpDisplayName,
+    DWORD dwDesiredAccess,
+    DWORD dwServiceType,
+    DWORD dwStartType,
+    DWORD dwErrorControl,
+    LPCSTR lpBinaryPathName,
+    LPCSTR lpLoadOrderGroup,
+    LPDWORD lpdwTagId,
+    LPCSTR lpDependencies,
+    LPCSTR lpServiceStartName,
+    LPCSTR lpPassword
+) {
+    PreHook(1, "CreateServiceA");
+    char buf[300];
+    snprintf(buf, 300, "Windows service creation detected.\nService name : %s\nContinue execution?", lpServiceName);
+    res = MsgBox(buf);
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_CreateServiceA(hSCManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
+}
 
 // 3: フックする全てのWindowsAPIのリスト
 HookList hooklist = {
@@ -241,7 +266,9 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "DeleteFileW", (void**)&orig_DeleteFileW, (void*)DeleteFileW_Hook),
         HookFunc("kernel32.dll", "DeleteFileA", (void**)&orig_DeleteFileA, (void*)DeleteFileA_Hook),
         HookFunc("kernel32.dll", "MoveFileW", (void**)&orig_MoveFileW, (void*)MoveFileW_Hook),
-        HookFunc("advapi32.dll", "CryptDecrypt", (void**)&orig_CryptDecrypt, (void*)CryptDecrypt_Hook)
+        HookFunc("advapi32.dll", "CryptDecrypt", (void**)&orig_CryptDecrypt, (void*)CryptDecrypt_Hook),
+        HookFunc("advapi32.dll", "CreateServiceA", (void**)&orig_CreateServiceA, (void*)CreateServiceA_Hook),
+
 };
 
 // ================================== ここまでを編集してください！ =====================================================
