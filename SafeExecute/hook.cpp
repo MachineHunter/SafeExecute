@@ -114,8 +114,11 @@ HINTERNET InternetOpenUrlA_Hook(
 	DWORD_PTR dwContext
 ) {
     PreHook(1, "InternetOpenUrlA");
-    // TODO: interactive
-    ExitProcess(1);
+    char buf[500];
+    snprintf(buf, 500, "This executable attempt to access the URL below\n%s\nContinue execution?", lpszUrl);
+    res = MsgBox(buf);
+    if(res==IDNO)
+        ExitProcess(1);
     return orig_InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwFlags, dwContext);
 }
 
