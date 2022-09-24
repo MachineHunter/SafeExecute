@@ -13,6 +13,7 @@ typedef BOOL(WINAPI* CREATEPROCESSA)(PCTSTR pszApplicationName, PTSTR  pszComman
 typedef int(WINAPI* WSASTARTUP)(WORD wVersionRequired, LPWSADATA lpWSAData);
 typedef HINTERNET (WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXA)(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
+typedef LSTATUS(WINAPI* REGCREATEKEYEXW)(HKEY hKey, LPCWSTR lpSubKey, DWORD Reserved, LPWSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
 typedef BOOL(WINAPI* WRITEFILE)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped);
 typedef BOOL(WINAPI* DELETEFILEW)(LPCWSTR lpFileName);
 typedef BOOL(WINAPI* DELETEFILEA)(LPCSTR lpFileName);
@@ -24,6 +25,7 @@ CREATEPROCESSA orig_CreateProcessA;
 WSASTARTUP orig_WSAStartup;
 INTERNETOPENURLA orig_InternetOpenUrlA;
 REGCREATEKEYEXA orig_RegCreateKeyExA;
+REGCREATEKEYEXW orig_RegCreateKeyExW;
 WRITEFILE orig_WriteFile;
 DELETEFILEW orig_DeleteFileW;
 DELETEFILEA orig_DeleteFileA;
@@ -110,11 +112,39 @@ LSTATUS WINAPI RegCreateKeyExA_Hook(
     // スタートアップレジストリへの登録の検知
     if ((_stricmp(lpSubKey, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)){
         PreHook(3, "RegCreateKeyExA", lpSubKey, "KEY_SET_VALUE");
-        // TODO: interactive
-        ExitProcess(1);
+        // interactive mode
+        res = MsgBox("Registration to startup registry datected\nContinue execution?");
+        if (res == IDNO)
+            ExitProcess(1);
     }
 
     return orig_RegCreateKeyExA(hkey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes, phkResult, lpdwDisposition);
+}
+
+LSTATUS WINAPI RegCreateKeyExW_Hook(
+    HKEY hkey,
+    LPCWSTR lpSubKey,
+    DWORD Reserved,
+    LPWSTR lpClass,
+    DWORD dwOptions,
+    REGSAM samDesired,
+    const LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    PHKEY phkResult,
+    LPDWORD lpdwDisposition
+) { 
+    //LPCWSTR c = ;
+
+    // スタートアップレジストリへの登録の検知
+    if ((wcscmp(lpSubKey, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)) {
+        PreHook(3, "RegCreateKeyExW", lpSubKey, "KEY_SET_VALUE");
+        // interactive mode
+        res = MsgBox("Registration to startup registry datected\nContinue execution?");
+        if(res == IDNO)
+            ExitProcess(1);
+    }
+
+    return orig_RegCreateKeyExW(hkey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes, phkResult, lpdwDisposition);
+
 }
 
 bool WINAPI WriteFile_Hook(
@@ -182,6 +212,7 @@ HookList hooklist = {
         HookFunc("ws2_32.dll", WSAStartup_Ordinal, (void**)&orig_WSAStartup, (void*)WSAStartup_Hook),
         HookFunc("WinInet.dll", "InternetOpenUrlA", (void**)&orig_InternetOpenUrlA, (void*)InternetOpenUrlA_Hook),
         HookFunc("advapi32.dll", "RegCreateKeyExA", (void**)&orig_RegCreateKeyExA, (void*)RegCreateKeyExA_Hook),
+        HookFunc("advapi32.dll", "RegCreateKeyExW", (void**)&orig_RegCreateKeyExW, (void*)RegCreateKeyExW_Hook),
         HookFunc("kernel32.dll", "WriteFile", (void**)&orig_WriteFile, (void*)WriteFile_Hook),
         HookFunc("kernel32.dll", "DeleteFileW", (void**)&orig_DeleteFileW, (void*)DeleteFileW_Hook),
         HookFunc("kernel32.dll", "DeleteFileA", (void**)&orig_DeleteFileA, (void*)DeleteFileA_Hook),

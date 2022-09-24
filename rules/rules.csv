@@ -4,6 +4,7 @@ CreateProcessA,1
 115,1
 InternetOpenUrlA,1
 RegCreateKeyExA,1
+RegCreateKeyExW,1
 WriteFile,1
 DeleteFileW,1
 DeleteFileA,1
