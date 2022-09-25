@@ -1,12 +1,12 @@
 #pragma once
 #include <Windows.h>
 #include <msclr/marshal.h>
-#include "Shlwapi.h"
 #include <vector>
+#include <atlstr.h>
+#include "ApiDict.h"
+#include "Shlwapi.h"
 #pragma comment(lib, "shlwapi.lib")
 
-typedef System::Collections::Generic::Queue<TreeNode^> NodeQueue;
-typedef System::Collections::Generic::List<String^> StrList;
 
 namespace SafeExecutorGUI {
 
@@ -17,6 +17,10 @@ namespace SafeExecutorGUI {
 	using namespace System::Data;
 	using namespace System::Drawing;
 	using namespace System::IO;
+	using namespace System::Runtime::InteropServices;
+	using namespace msclr::interop;
+	typedef System::Collections::Generic::Queue<TreeNode^> NodeQueue;
+	typedef System::Collections::Generic::List<String^> StrList;
 
 	/// <summary>
 	/// MainWindow の概要
@@ -26,7 +30,6 @@ namespace SafeExecutorGUI {
 	public:
 		MainWindow(void)
 		{
-			static System::Collections::Generic::Dictionary<String^, System::Collections::Generic::List<String^>^>^ apiDict = gcnew System::Collections::Generic::Dictionary<String^, System::Collections::Generic::List<String^>^>();
 
 			InitializeComponent();
 			//
@@ -191,6 +194,7 @@ namespace SafeExecutorGUI {
 			this->treeView->Name = L"treeView";
 			this->treeView->Size = System::Drawing::Size(444, 405);
 			this->treeView->TabIndex = 0;
+			this->treeView->AfterCheck += gcnew System::Windows::Forms::TreeViewEventHandler(this, &MainWindow::treeView_AfterCheck);
 			// 
 			// output_panel
 			// 
@@ -234,8 +238,10 @@ namespace SafeExecutorGUI {
 	}
 private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e) {
 	
+	// TODO: 
 	char path[MAX_PATH];
-	GetCurrentDirectoryA(MAX_PATH, path);
+	GetModuleFileNameA(NULL, path, MAX_PATH);
+	for (int i = 0; i < 4; i++) PathRemoveFileSpecA(path);
 	strcat_s(path, "\\rules");
 
 	if (PathFileExistsA(path)) {
@@ -243,13 +249,14 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 
 		HANDLE hFile;
 		DWORD writesize;
-		if (PathFileExistsA(path)) {
-			hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		}
-		else {
-			hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		ApiDict^ ad = gcnew ApiDict();
 
+		if (PathFileExistsA(path)) {
+			DeleteFileA(path);
 		}
+		
+		hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		
 		for each(TreeNode ^n in treeView->Nodes)
 		{
 			if (n!= nullptr)
@@ -257,13 +264,25 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 				//Using a queue to store and process each node in the TreeView
 				NodeQueue ^staging = gcnew NodeQueue();
 				staging->Enqueue(n);
-
 				while (staging->Count > 0)
 				{
 					n = staging->Dequeue();
-					if (!n->Parent) {
-						if (n->Name == "ファイル名削除") {
-							apiDict["ファイル名削除"][0];
+			
+					if (n->Parent) {
+						for each (String ^ s in ad->apiDict[n->Text]) {
+							char buf[100];
+							memset(buf, 0, 100);
+							// char* apiName = (char*)Marshal::StringToHGlobalAnsi(s).ToPointer();
+							marshal_context^ context = gcnew marshal_context();
+							const char* apiName = context->marshal_as<const char*>(s);
+							strcat(buf, apiName);
+							strcat(buf, ",");
+							char c = n->Checked + '0';
+							strcat(buf, &c);
+							strcat(buf, "\n");
+							DWORD writesize;
+							WriteFile(hFile, buf, strlen(buf), &writesize, NULL);
+							SetFilePointer(hFile, 0, NULL, FILE_END);
 						}
 					}
 
@@ -274,23 +293,24 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 				}
 			}
 		}
+		CloseHandle(hFile);
 	}
 
 
 	msclr::interop::marshal_context context;
 	LPCSTR exePath = context.marshal_as<const char*>(FileSelectTextBox->Text);
 	char processPath[MAX_PATH];
-	GetModuleFileNameA(NULL, processPath, MAX_PATH);
+	GetModuleFileNameA(NULL, path, MAX_PATH);
 
 	if (PathFileExistsA(exePath)) {
 		// TODO: このパスの計算をいつか環境変数とかで整理したい
 		//   例) [System.Environment]::SetEnvironmentVariable("SafeExecuteInstallDir", $PSScriptRoot, "Machine")
-		for(int i=0; i<4; i++) PathRemoveFileSpecA(processPath);
-		SetCurrentDirectoryA(processPath);
+		for(int i=0; i<4; i++) PathRemoveFileSpecA(path);
+		SetCurrentDirectoryA(path);
 		char executorPath[MAX_PATH];
-		snprintf(executorPath, MAX_PATH, "%s\\%s", processPath, "SafeExecutor\\x64\\Debug\\SafeExecutor.exe");
+		snprintf(executorPath, MAX_PATH, "%s\\%s", path, "SafeExecutor\\x64\\Debug\\SafeExecutor.exe");
 		char dllPath[MAX_PATH];
-		snprintf(dllPath, MAX_PATH, "%s\\%s", processPath, "SafeExecute\\x64\\Debug\\SafeExecute.dll");
+		snprintf(dllPath, MAX_PATH, "%s\\%s", path, "SafeExecute\\x64\\Debug\\SafeExecute.dll");
 
 		if (PathFileExistsA(executorPath) && PathFileExistsA(dllPath)) {
 			STARTUPINFOA si;
@@ -315,6 +335,19 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 		else MessageBox::Show("Something went wrong in Path Calculation", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 		return;
 	}
+}
+
+private: void CheckTreeViewNode(TreeNode^ node, BOOL isChecked) {
+	for each (TreeNode^ n in node->Nodes) {
+		n->Checked = isChecked;
+		if (n->Nodes->Count > 0) {
+			this->CheckTreeViewNode(n, isChecked);
+		}
+	}
+}
+
+private: System::Void treeView_AfterCheck(System::Object^ sender, System::Windows::Forms::TreeViewEventArgs^ e) {
+	CheckTreeViewNode(e->Node, e->Node->Checked);
 }
 };
 }
