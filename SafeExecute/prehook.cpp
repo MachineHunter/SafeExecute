@@ -62,8 +62,8 @@ void PreHook(int argc, ...) {
 		ExitProcess(1);
 		break;
 	case MODE_ERRORDISPLAY:
-		char buf[256];
-		snprintf(buf, 256, "Hooked %s", argv[0]);
+		char buf[500];
+		snprintf(buf, 500, "Detected %s", argv[0]);
 		if (argc > 1) strcat_s(buf, "\nArguments:");
 		for (int i = 1; i < argc; i++) {
 			strcat_s(buf, "\n");
@@ -72,6 +72,7 @@ void PreHook(int argc, ...) {
 			strcat_s(buf, buf2);
 			strcat_s(buf, argv[i]);
 		}
+		strcat_s(buf, "\n\nExiting...");
 		MessageBoxA(NULL, buf, "SafeExecute", MB_OK);
 		ExitProcess(1);
 		break;
