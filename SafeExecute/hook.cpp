@@ -11,6 +11,7 @@ typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttribut
 typedef BOOL(WINAPI* SETFILEATTRIBUTESW)(LPCWSTR lpFileName, DWORD dwFileAttributes);
 typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
 typedef BOOL(WINAPI* CREATEPROCESSA)(PCTSTR pszApplicationName, PTSTR  pszCommandLine, PSECURITY_ATTRIBUTES psaProcess, PSECURITY_ATTRIBUTES psaThread, BOOL   bInheritHandles, DWORD  fdwCreate, PVOID  pvEnvironment, PCTSTR pszCurDir, LPSTARTUPINFO  psiStartInfo, PPROCESS_INFORMATION ppiProcInfo);
+typedef BOOL(WINAPI* CREATEPROCESSW)(LPCWSTR lpApplicationName, LPWSTR  lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles, DWORD dwCreationFlags, LPVOID  lpEnvironment, LPCWSTR lpCurrentDirectory, LPSTARTUPINFO lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
 typedef INT(WSAAPI* INETPTON)(INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
 typedef HINTERNET (WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXA)(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
@@ -26,6 +27,7 @@ SETFILEATTRIBUTESA orig_SetFileAttributesA;
 SETFILEATTRIBUTESW orig_SetFileAttributesW;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
 CREATEPROCESSA orig_CreateProcessA;
+CREATEPROCESSW orig_CreateProcessW;
 INETPTON orig_inet_pton;
 INTERNETOPENURLA orig_InternetOpenUrlA;
 REGCREATEKEYEXA orig_RegCreateKeyExA;
@@ -94,9 +96,47 @@ bool WINAPI CreateProcessA_Hook(
     PPROCESS_INFORMATION ppiProcInfo
 ) {
     PreHook(1, "CreateProcessA");
-    // TODO: interactive
-    ExitProcess(1);
+    char buf[300];
+    if (pszApplicationName == NULL)
+        snprintf(buf, 300, "This executable is trying to execute a file below\n%s\nContinue execution?", pszCommandLine);
+    else {
+        if(pszCommandLine==NULL)
+            snprintf(buf, 300, "This executable is trying to execute a file below\n%s\nContinue execution?", pszApplicationName);
+        else
+            snprintf(buf, 300, "This executable is trying to execute a file below\n%s %s\nContinue execution?", pszApplicationName, pszCommandLine);
+    }
+    res = MsgBox(buf);
+    if (res == IDNO)
+        ExitProcess(1);
     return orig_CreateProcessA(pszApplicationName, pszCommandLine, psaProcess, psaThread, bInheritHandles, fdwCreate, pvEnvironment, pszCurDir, psiStartInfo, ppiProcInfo);
+}
+
+BOOL WINAPI CreateProcessW_Hook (
+    LPCWSTR lpApplicationName,
+    LPWSTR  lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles,
+    DWORD dwCreationFlags,
+    LPVOID  lpEnvironment,
+    LPCWSTR lpCurrentDirectory,
+    LPSTARTUPINFO lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation
+) {
+    PreHook(1, "CreateProcessW");
+    char buf[300];
+    if (lpApplicationName == NULL)
+        snprintf(buf, 300, "This executable is trying to execute a file below\n%S\nContinue execution?", lpCommandLine);
+    else {
+        if (lpCommandLine == NULL)
+            snprintf(buf, 300, "This executable is trying to execute a file below\n%S\nContinue execution?", lpApplicationName);
+        else
+            snprintf(buf, 300, "This executable is trying to execute a file below\n%S %S\nContinue execution?", lpApplicationName, lpCommandLine);
+    }
+    res = MsgBox(buf);
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_CreateProcessW(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
 }
 
 int WSAAPI inet_pton_Hook(
@@ -271,6 +311,7 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesW", (void**)&orig_SetFileAttributesW, (void*)SetFileAttributesW_Hook),
         HookFunc("kernel32.dll", "IsDebuggerPresent", (void**)&orig_IsDebuggerPresent, (void*)IsDebuggerPresent_Hook),
         HookFunc("kernel32.dll", "CreateProcessA", (void**)&orig_CreateProcessA, (void*)CreateProcessA_Hook),
+        HookFunc("kernel32.dll", "CreateProcessW", (void**)&orig_CreateProcessW, (void*)CreateProcessW_Hook),
         HookFunc("ws2_32.dll", "inet_pton", (void**)&orig_inet_pton, (void*)inet_pton_Hook),
         HookFunc("WinInet.dll", "InternetOpenUrlA", (void**)&orig_InternetOpenUrlA, (void*)InternetOpenUrlA_Hook),
         HookFunc("advapi32.dll", "RegCreateKeyExA", (void**)&orig_RegCreateKeyExA, (void*)RegCreateKeyExA_Hook),

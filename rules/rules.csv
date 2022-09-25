@@ -2,6 +2,7 @@ SetFileAttributesA,1
 SetFileAttributesW,1
 IsDebuggerPresent,1
 CreateProcessA,1
+CreateProcessW,1
 115,1
 InternetOpenUrlA,1
 RegCreateKeyExA,1
