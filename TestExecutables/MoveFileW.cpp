@@ -2,8 +2,8 @@
 #include<winbase.h>
 
 int main(
-    LPCTSTR lpExistingFileName,
-    LPCTSTR lpNewFileName
+    LPCWSTR lpExistingFileName,
+    LPCWSTR lpNewFileName
 ) {
     // Move a file to the same place
     MessageBoxA(NULL, "Moving \"MoveFileW.cpp\" to \"MoveFileW2.cpp\" if possible!", "debug", MB_OK);
