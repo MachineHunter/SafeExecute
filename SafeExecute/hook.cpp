@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "hook.h"
-#include <wininet.h>
 
 int res;
 
@@ -13,12 +12,13 @@ typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
 typedef BOOL(WINAPI* CREATEPROCESSA)(PCTSTR pszApplicationName, PTSTR  pszCommandLine, PSECURITY_ATTRIBUTES psaProcess, PSECURITY_ATTRIBUTES psaThread, BOOL   bInheritHandles, DWORD  fdwCreate, PVOID  pvEnvironment, PCTSTR pszCurDir, LPSTARTUPINFO  psiStartInfo, PPROCESS_INFORMATION ppiProcInfo);
 typedef BOOL(WINAPI* CREATEPROCESSW)(LPCWSTR lpApplicationName, LPWSTR  lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles, DWORD dwCreationFlags, LPVOID  lpEnvironment, LPCWSTR lpCurrentDirectory, LPSTARTUPINFO lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
 typedef INT(WSAAPI* INETPTON)(INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
-typedef HINTERNET (WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
+typedef HINTERNET(WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXA)(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXW)(HKEY hKey, LPCWSTR lpSubKey, DWORD Reserved, LPWSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
 typedef BOOL(WINAPI* WRITEFILE)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped);
 typedef BOOL(WINAPI* DELETEFILEW)(LPCWSTR lpFileName);
 typedef BOOL(WINAPI* DELETEFILEA)(LPCSTR lpFileName);
+typedef BOOL(WINAPI* MOVEFILEA)(LPCTSTR lpExistingFileName, LPCTSTR lpNewFileName);
 typedef BOOL(WINAPI* MOVEFILEW)(LPCTSTR lpExistingFileName, LPCTSTR lpNewFileName);
 typedef BOOL(WINAPI* MOVEFILEEXA)(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, DWORD  dwFlags);
 typedef BOOL(WINAPI* MOVEFILEEXW)(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, DWORD  dwFlags);
@@ -35,11 +35,18 @@ REGCREATEKEYEXW orig_RegCreateKeyExW;
 WRITEFILE orig_WriteFile;
 DELETEFILEW orig_DeleteFileW;
 DELETEFILEA orig_DeleteFileA;
+MOVEFILEA orig_MoveFileA;
 MOVEFILEW orig_MoveFileW;
 MOVEFILEEXA orig_MoveFileExA;
 MOVEFILEEXW orig_MoveFileExW;
 CRYPTDECRYPT orig_CryptDecrypt;
 
+std::string WStringToString(const std::wstring& s)
+{
+    std::string temp(s.length(), ' ');
+    std::copy(s.begin(), s.end(), temp.begin());
+    return temp;
+}
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
 // （※ PreHook() を必ず呼んで欲しいです...!）
@@ -154,12 +161,12 @@ int WSAAPI inet_pton_Hook(
 }
 
 HINTERNET InternetOpenUrlA_Hook(
-	HINTERNET hInternet,
-	LPCSTR    lpszUrl,
-	LPCSTR    lpszHeaders,
-	DWORD     dwHeadersLength,
-	DWORD     dwFlags,
-	DWORD_PTR dwContext
+    HINTERNET hInternet,
+    LPCSTR    lpszUrl,
+    LPCSTR    lpszHeaders,
+    DWORD     dwHeadersLength,
+    DWORD     dwFlags,
+    DWORD_PTR dwContext
 ) {
     PreHook(1, "InternetOpenUrlA");
     char buf[300];
@@ -182,7 +189,7 @@ LSTATUS WINAPI RegCreateKeyExA_Hook(
     LPDWORD lpdwDisposition
 ) {
     // スタートアップレジストリへの登録の検知
-    if ((_stricmp(lpSubKey, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)){
+    if ((_stricmp(lpSubKey, "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)) {
         PreHook(3, "RegCreateKeyExA", lpSubKey, "KEY_SET_VALUE");
         res = MsgBox("Registration to startup registry detected\nBy doing this, the executable will automatically runs on system startup.\nContinue execution?");
         if (res == IDNO)
@@ -202,13 +209,13 @@ LSTATUS WINAPI RegCreateKeyExW_Hook(
     const LPSECURITY_ATTRIBUTES lpSecurityAttributes,
     PHKEY phkResult,
     LPDWORD lpdwDisposition
-) { 
+) {
     // スタートアップレジストリへの登録の検知
     if ((_wcsicmp(lpSubKey, L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run") == 0) && ((samDesired & KEY_SET_VALUE) != 0)) {
         setlocale(LC_ALL, "Japanese");
         PreHook(3, "RegCreateKeyExW", WStringToString(lpSubKey).c_str(), "KEY_SET_VALUE");
         res = MsgBox("Registration to startup registry detected\nBy doing this, the executable will automatically runs on system startup.\nContinue execution?");
-        if(res == IDNO)
+        if (res == IDNO)
             ExitProcess(1);
     }
     return orig_RegCreateKeyExW(hkey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes, phkResult, lpdwDisposition);
@@ -245,13 +252,31 @@ bool WINAPI DeleteFileA_Hook(
     return orig_DeleteFileA(lpFileName);
 }
 
-BOOL WINAPI MoveFileW_Hook(
+BOOL WINAPI MoveFileA_Hook(
     LPCTSTR lpExistingFileName,
     LPCTSTR lpNewFileName
 ) {
+    PreHook(1, "MoveFileA");
+    // MoveFileA Hook
+    char buf_msg[128];
+    sprintf_s(buf_msg, "This executable is trying to rename %s to %s\nContinue execution ? ", (const char*) lpExistingFileName, (const char*) lpNewFileName);
+    res = MsgBox(buf_msg);
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_MoveFileA(lpExistingFileName, lpNewFileName);
+}
+
+BOOL WINAPI MoveFileW_Hook(
+    LPCWSTR lpExistingFileName,
+    LPCWSTR lpNewFileName
+) {
     PreHook(1, "MoveFileW");
-    // MoveFile Hook
-    ExitProcess(1);
+    // MoveFileW Hook
+    char buf_msg[128];
+    sprintf_s(buf_msg, "This executable is trying to rename %lS to %lS\nContinue execution ? ", lpExistingFileName, lpNewFileName);
+    res = MsgBox(buf_msg);
+    if (res == IDNO)
+        ExitProcess(1);
     return orig_MoveFileW(lpExistingFileName, lpNewFileName);
 }
 
@@ -278,7 +303,7 @@ bool WINAPI MoveFileExW_Hook(
     DWORD  dwFlags
 ) {
     PreHook(1, "MoveFileExW");
-    
+
     char buf_msg[128];
     sprintf_s(buf_msg, "This executable is trying to rename %S to %S\nContinue execution ? ", lpExistingFileName, lpNewFileName);
     res = MsgBox(buf_msg);
@@ -319,6 +344,7 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "WriteFile", (void**)&orig_WriteFile, (void*)WriteFile_Hook),
         HookFunc("kernel32.dll", "DeleteFileW", (void**)&orig_DeleteFileW, (void*)DeleteFileW_Hook),
         HookFunc("kernel32.dll", "DeleteFileA", (void**)&orig_DeleteFileA, (void*)DeleteFileA_Hook),
+        HookFunc("kernel32.dll", "MoveFileA", (void**)&orig_MoveFileA, (void*)MoveFileA_Hook),
         HookFunc("kernel32.dll", "MoveFileW", (void**)&orig_MoveFileW, (void*)MoveFileW_Hook),
         HookFunc("kernel32.dll", "MoveFileExA", (void**)&orig_MoveFileExA, (void*)MoveFileExA_Hook),
         HookFunc("kernel32.dll", "MoveFileExW", (void**)&orig_MoveFileExW, (void*)MoveFileExW_Hook),
@@ -355,7 +381,7 @@ void Hook() {
                 if (pfnImportedFunc == (FARPROC)*hookfunc.origfunc) {
                     MEMORY_BASIC_INFORMATION mbi;
                     DWORD dwJunk = 0;
-                    
+
                     VirtualQuery(pFirstThunk, &mbi, sizeof(MEMORY_BASIC_INFORMATION));
                     VirtualProtect(mbi.BaseAddress, mbi.RegionSize, PAGE_EXECUTE_READWRITE, &mbi.Protect);
                     pFirstThunk->u1.Function = (ULONGLONG)(DWORD_PTR)hookfunc.hook;

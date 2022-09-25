@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <vector>
 #include "mydebug.h"
 #include "prehook.h"
@@ -7,6 +7,8 @@
 #include <Dbghelp.h>
 #include <Wincrypt.h>
 #include <processthreadsapi.h>
+#include <wininet.h>
+#include <atlstr.h>
 #pragma comment(lib, "Dbghelp")
 #pragma comment(lib, "crypt32.lib")
 
