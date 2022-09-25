@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "hook.h"
-#include <wininet.h>
-#include <atlstr.h>
-#include <string>
+
 int res;
 
 // ================================== フックを追加する場合は、ここから =====================================================
@@ -221,11 +219,7 @@ BOOL WINAPI MoveFileA_Hook(
     PreHook(1, "MoveFileA");
     // MoveFileA Hook
     char buf_msg[128];
-    CStringA efn(lpExistingFileName);
-    CStringA nfn(lpNewFileName);
-    const char* lpEFN = efn;
-    const char* lpNFN = nfn;
-    sprintf_s(buf_msg, "This executable is trying to rename %s to %s\nContinue execution ? ", lpEFN, lpNFN);
+    sprintf_s(buf_msg, "This executable is trying to rename %s to %s\nContinue execution ? ", (const char*) lpExistingFileName, (const char*) lpNewFileName);
     res = MsgBox(buf_msg);
     if (res == IDNO)
         ExitProcess(1);
@@ -239,7 +233,7 @@ BOOL WINAPI MoveFileW_Hook(
     PreHook(1, "MoveFileW");
     // MoveFileW Hook
     char buf_msg[128];
-    sprintf_s(buf_msg, "This executable is trying to rename %S to %S\nContinue execution ? ", lpExistingFileName, lpNewFileName);
+    sprintf_s(buf_msg, "This executable is trying to rename %lS to %lS\nContinue execution ? ", lpExistingFileName, lpNewFileName);
     res = MsgBox(buf_msg);
     if (res == IDNO)
         ExitProcess(1);
