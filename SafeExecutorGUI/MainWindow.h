@@ -3,7 +3,6 @@
 #include <msclr/marshal.h>
 #include <vector>
 #include <atlstr.h>
-#include <string>
 #include "ApiDict.h"
 #include "Shlwapi.h"
 #pragma comment(lib, "shlwapi.lib")
@@ -360,12 +359,10 @@ private: System::Void treeView_AfterCheck(System::Object^ sender, System::Window
 }
 
 private: System::Void target_exe_selection_panel_DragEnter(System::Object^ sender, System::Windows::Forms::DragEventArgs^ e) {
-	if (e->Data->GetDataPresent(DataFormats::FileDrop)) {
+	if (e->Data->GetDataPresent(DataFormats::FileDrop))
 		e->Effect = DragDropEffects::All;
-	}
-	else {
+	else
 		e->Effect = DragDropEffects::None;
-	}
 }
 
 private: System::Void target_exe_selection_panel_DragDrop(System::Object^ sender, System::Windows::Forms::DragEventArgs^ e) {
