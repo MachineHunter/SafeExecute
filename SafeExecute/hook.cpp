@@ -24,6 +24,7 @@ typedef BOOL(WINAPI* MOVEFILEEXA)(LPCSTR lpExistingFileName, LPCSTR lpNewFileNam
 typedef BOOL(WINAPI* MOVEFILEEXW)(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, DWORD  dwFlags);
 typedef BOOL(WINAPI* CRYPTDECRYPT)(HCRYPTKEY hKey, HCRYPTHASH hHash, BOOL Final, DWORD dwFlags, BYTE* pbData, DWORD* pdwDataLen);
 typedef SC_HANDLE(WINAPI* CREATESERVICEA)(SC_HANDLE hSCManager, LPCSTR lpServiceName, LPCSTR lpDisplayName, DWORD dwDesiredAccess, DWORD dwServiceType, DWORD dwStartType, DWORD dwErrorControl, LPCSTR lpBinaryPathName, LPCSTR lpLoadOrderGroup, LPDWORD lpdwTagId, LPCSTR lpDependencies, LPCSTR lpServiceStartName, LPCSTR lpPassword);
+typedef SC_HANDLE(WINAPI* CREATESERVICEW)(SC_HANDLE hSCManager, LPCWSTR lpServiceName, LPCWSTR lpDisplayName, DWORD dwDesiredAccess, DWORD dwServiceType, DWORD dwStartType, DWORD dwErrorControl, LPCWSTR lpBinaryPathName, LPCWSTR lpLoadOrderGroup, LPDWORD lpdwTagId, LPCWSTR lpDependencies, LPCWSTR lpServiceStartName, LPCWSTR lpPassword);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 SETFILEATTRIBUTESW orig_SetFileAttributesW;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
@@ -42,6 +43,7 @@ MOVEFILEEXA orig_MoveFileExA;
 MOVEFILEEXW orig_MoveFileExW;
 CRYPTDECRYPT orig_CryptDecrypt;
 CREATESERVICEA orig_CreateServiceA;
+CREATESERVICEW orig_CreateServiceW;
 
 std::string WStringToString(const std::wstring& s)
 {
@@ -332,7 +334,7 @@ BOOL WINAPI CryptDecrypt_Hook(
 }
 
 SC_HANDLE WINAPI CreateServiceA_Hook(
-    SC_HANDLE hscManager,
+    SC_HANDLE hSCManager,
     LPCSTR lpServiceName,
     LPCSTR lpDisplayName,
     DWORD dwDesiredAccess,
@@ -352,7 +354,31 @@ SC_HANDLE WINAPI CreateServiceA_Hook(
     res = MsgBox(buf);
     if (res == IDNO)
         ExitProcess(1);
-        return orig_CreateServiceA(hscManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
+        return orig_CreateServiceA(hSCManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
+}
+
+SC_HANDLE WINAPI CreateServiceW_Hook(
+    SC_HANDLE hSCManager,
+    LPCWSTR lpServiceName,
+    LPCWSTR lpDisplayName,
+    DWORD dwDesiredAccess,
+    DWORD dwServiceType,
+    DWORD dwStartType,
+    DWORD dwErrorControl,
+    LPCWSTR lpBinaryPathName,
+    LPCWSTR lpLoadOrderGroup,
+    LPDWORD lpdwTagId,
+    LPCWSTR lpDependencies,
+    LPCWSTR lpServiceStartName,
+    LPCWSTR lpPassword
+) {
+    PreHook(1, "CreateServiceW");
+    char buf[300];
+    snprintf(buf, 300, "Windows service creation detected.\nService name : %s\nBinary Path : %s\nContinue execution?", lpServiceName, lpBinaryPathName);
+    res = MsgBox(buf);
+    if (res == IDNO)
+        ExitProcess(1);
+        return orig_CreateServiceW(hSCManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
 }
 
 // 3: フックする全てのWindowsAPIのリスト
@@ -374,7 +400,8 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "MoveFileExA", (void**)&orig_MoveFileExA, (void*)MoveFileExA_Hook),
         HookFunc("kernel32.dll", "MoveFileExW", (void**)&orig_MoveFileExW, (void*)MoveFileExW_Hook),
         HookFunc("advapi32.dll", "CryptDecrypt", (void**)&orig_CryptDecrypt, (void*)CryptDecrypt_Hook),
-        HookFunc("advapi32.dll", "CreateServiceA", (void**)&orig_CreateServiceA, (void*)CreateServiceA_Hook)
+        HookFunc("advapi32.dll", "CreateServiceA", (void**)&orig_CreateServiceA, (void*)CreateServiceA_Hook),
+        HookFunc("advapi32.dll", "CreateServiceW", (void**)&orig_CreateServiceW, (void*)CreateServiceW_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================
