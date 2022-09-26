@@ -348,11 +348,11 @@ SC_HANDLE WINAPI CreateServiceA_Hook(
 ) {
     PreHook(1, "CreateServiceA");
     char buf[300];
-    snprintf(buf, 300, "Windows service creation detected.\nService name : %s\nContinue execution?", lpServiceName);
+    snprintf(buf, 300, "Windows service creation detected.\nService name : %s\nBinary Path : %s\nContinue execution?", lpServiceName, lpBinaryPathName);
     res = MsgBox(buf);
     if (res == IDNO)
         ExitProcess(1);
-        return orig_CreateServiceA(hSCManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
+        return orig_CreateServiceA(hscManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
 }
 
 // 3: フックする全てのWindowsAPIのリスト
