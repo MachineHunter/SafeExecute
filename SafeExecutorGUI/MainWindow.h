@@ -69,7 +69,7 @@ namespace SafeExecutorGUI {
 				gcnew TreeNode("子プロセスの生成"),
 			};
 
-			TreeNode^ nodProcess = gcnew TreeNode("レジストリ操作", nodChildProcess);
+			TreeNode^ nodProcess = gcnew TreeNode("プロセス操作", nodChildProcess);
 			treeView->Nodes->Add(nodProcess);
 	
 			//マルウェアっぽい挙動
@@ -131,22 +131,26 @@ namespace SafeExecutorGUI {
 			// 
 			// target_exe_selection_panel
 			// 
+			this->target_exe_selection_panel->AllowDrop = true;
 			this->target_exe_selection_panel->BackColor = System::Drawing::SystemColors::ActiveCaption;
 			this->target_exe_selection_panel->Controls->Add(this->ExecBtn);
 			this->target_exe_selection_panel->Controls->Add(this->FileSelectBtn);
 			this->target_exe_selection_panel->Controls->Add(this->FileSelectTextBox);
 			this->target_exe_selection_panel->Dock = System::Windows::Forms::DockStyle::Top;
 			this->target_exe_selection_panel->Location = System::Drawing::Point(0, 0);
+			this->target_exe_selection_panel->Margin = System::Windows::Forms::Padding(4);
 			this->target_exe_selection_panel->Name = L"target_exe_selection_panel";
-			this->target_exe_selection_panel->Size = System::Drawing::Size(861, 166);
+			this->target_exe_selection_panel->Size = System::Drawing::Size(1148, 208);
 			this->target_exe_selection_panel->TabIndex = 0;
+			this->target_exe_selection_panel->DragDrop += gcnew System::Windows::Forms::DragEventHandler(this, &MainWindow::target_exe_selection_panel_DragDrop);
+			this->target_exe_selection_panel->DragEnter += gcnew System::Windows::Forms::DragEventHandler(this, &MainWindow::target_exe_selection_panel_DragEnter);
 			// 
 			// ExecBtn
 			// 
-			this->ExecBtn->Location = System::Drawing::Point(658, 65);
-			this->ExecBtn->Margin = System::Windows::Forms::Padding(2);
+			this->ExecBtn->Location = System::Drawing::Point(877, 81);
+			this->ExecBtn->Margin = System::Windows::Forms::Padding(3, 2, 3, 2);
 			this->ExecBtn->Name = L"ExecBtn";
-			this->ExecBtn->Size = System::Drawing::Size(56, 25);
+			this->ExecBtn->Size = System::Drawing::Size(75, 31);
 			this->ExecBtn->TabIndex = 2;
 			this->ExecBtn->Text = L"実行";
 			this->ExecBtn->UseVisualStyleBackColor = true;
@@ -154,10 +158,10 @@ namespace SafeExecutorGUI {
 			// 
 			// FileSelectBtn
 			// 
-			this->FileSelectBtn->Location = System::Drawing::Point(585, 65);
-			this->FileSelectBtn->Margin = System::Windows::Forms::Padding(2);
+			this->FileSelectBtn->Location = System::Drawing::Point(780, 81);
+			this->FileSelectBtn->Margin = System::Windows::Forms::Padding(3, 2, 3, 2);
 			this->FileSelectBtn->Name = L"FileSelectBtn";
-			this->FileSelectBtn->Size = System::Drawing::Size(56, 25);
+			this->FileSelectBtn->Size = System::Drawing::Size(75, 31);
 			this->FileSelectBtn->TabIndex = 1;
 			this->FileSelectBtn->Text = L"参照";
 			this->FileSelectBtn->UseVisualStyleBackColor = true;
@@ -167,10 +171,10 @@ namespace SafeExecutorGUI {
 			// 
 			this->FileSelectTextBox->BackColor = System::Drawing::Color::White;
 			this->FileSelectTextBox->Font = (gcnew System::Drawing::Font(L"MS UI Gothic", 10.2F, System::Drawing::FontStyle::Bold));
-			this->FileSelectTextBox->Location = System::Drawing::Point(54, 67);
-			this->FileSelectTextBox->Margin = System::Windows::Forms::Padding(2);
+			this->FileSelectTextBox->Location = System::Drawing::Point(72, 84);
+			this->FileSelectTextBox->Margin = System::Windows::Forms::Padding(3, 2, 3, 2);
 			this->FileSelectTextBox->Name = L"FileSelectTextBox";
-			this->FileSelectTextBox->Size = System::Drawing::Size(517, 21);
+			this->FileSelectTextBox->Size = System::Drawing::Size(688, 24);
 			this->FileSelectTextBox->TabIndex = 0;
 			// 
 			// checklist_panel
@@ -178,9 +182,10 @@ namespace SafeExecutorGUI {
 			this->checklist_panel->BackColor = System::Drawing::SystemColors::ActiveBorder;
 			this->checklist_panel->Controls->Add(this->treeView);
 			this->checklist_panel->Dock = System::Windows::Forms::DockStyle::Fill;
-			this->checklist_panel->Location = System::Drawing::Point(0, 166);
+			this->checklist_panel->Location = System::Drawing::Point(0, 208);
+			this->checklist_panel->Margin = System::Windows::Forms::Padding(4);
 			this->checklist_panel->Name = L"checklist_panel";
-			this->checklist_panel->Size = System::Drawing::Size(861, 432);
+			this->checklist_panel->Size = System::Drawing::Size(1148, 540);
 			this->checklist_panel->TabIndex = 1;
 			// 
 			// treeView
@@ -190,9 +195,10 @@ namespace SafeExecutorGUI {
 				| System::Windows::Forms::AnchorStyles::Right));
 			this->treeView->CheckBoxes = true;
 			this->treeView->Font = (gcnew System::Drawing::Font(L"MS UI Gothic", 12));
-			this->treeView->Location = System::Drawing::Point(21, 15);
+			this->treeView->Location = System::Drawing::Point(28, 19);
+			this->treeView->Margin = System::Windows::Forms::Padding(4);
 			this->treeView->Name = L"treeView";
-			this->treeView->Size = System::Drawing::Size(444, 405);
+			this->treeView->Size = System::Drawing::Size(591, 505);
 			this->treeView->TabIndex = 0;
 			this->treeView->AfterCheck += gcnew System::Windows::Forms::TreeViewEventHandler(this, &MainWindow::treeView_AfterCheck);
 			// 
@@ -200,19 +206,21 @@ namespace SafeExecutorGUI {
 			// 
 			this->output_panel->BackColor = System::Drawing::SystemColors::Info;
 			this->output_panel->Dock = System::Windows::Forms::DockStyle::Right;
-			this->output_panel->Location = System::Drawing::Point(482, 166);
+			this->output_panel->Location = System::Drawing::Point(643, 208);
+			this->output_panel->Margin = System::Windows::Forms::Padding(4);
 			this->output_panel->Name = L"output_panel";
-			this->output_panel->Size = System::Drawing::Size(379, 432);
+			this->output_panel->Size = System::Drawing::Size(505, 540);
 			this->output_panel->TabIndex = 2;
 			// 
 			// MainWindow
 			// 
-			this->AutoScaleDimensions = System::Drawing::SizeF(6, 12);
+			this->AutoScaleDimensions = System::Drawing::SizeF(8, 15);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->ClientSize = System::Drawing::Size(861, 598);
+			this->ClientSize = System::Drawing::Size(1148, 748);
 			this->Controls->Add(this->output_panel);
 			this->Controls->Add(this->checklist_panel);
 			this->Controls->Add(this->target_exe_selection_panel);
+			this->Margin = System::Windows::Forms::Padding(4);
 			this->Name = L"MainWindow";
 			this->Text = L"MainWindow";
 			this->target_exe_selection_panel->ResumeLayout(false);
@@ -348,6 +356,18 @@ private: void CheckTreeViewNode(TreeNode^ node, BOOL isChecked) {
 
 private: System::Void treeView_AfterCheck(System::Object^ sender, System::Windows::Forms::TreeViewEventArgs^ e) {
 	CheckTreeViewNode(e->Node, e->Node->Checked);
+}
+
+private: System::Void target_exe_selection_panel_DragEnter(System::Object^ sender, System::Windows::Forms::DragEventArgs^ e) {
+	if (e->Data->GetDataPresent(DataFormats::FileDrop))
+		e->Effect = DragDropEffects::All;
+	else
+		e->Effect = DragDropEffects::None;
+}
+
+private: System::Void target_exe_selection_panel_DragDrop(System::Object^ sender, System::Windows::Forms::DragEventArgs^ e) {
+	array<String^>^ droppedFiles = (array<String^>^)e->Data->GetData(DataFormats::FileDrop);
+	FileSelectTextBox->Text = droppedFiles[0];
 }
 };
 }
