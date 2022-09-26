@@ -12,7 +12,8 @@ typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
 typedef BOOL(WINAPI* CREATEPROCESSA)(PCTSTR pszApplicationName, PTSTR  pszCommandLine, PSECURITY_ATTRIBUTES psaProcess, PSECURITY_ATTRIBUTES psaThread, BOOL   bInheritHandles, DWORD  fdwCreate, PVOID  pvEnvironment, PCTSTR pszCurDir, LPSTARTUPINFO  psiStartInfo, PPROCESS_INFORMATION ppiProcInfo);
 typedef BOOL(WINAPI* CREATEPROCESSW)(LPCWSTR lpApplicationName, LPWSTR  lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles, DWORD dwCreationFlags, LPVOID  lpEnvironment, LPCWSTR lpCurrentDirectory, LPSTARTUPINFO lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
 typedef INT(WSAAPI* INETPTON)(INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
-typedef HINTERNET(WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
+typedef HINTERNET (WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
+typedef HINTERNET(WINAPI* INTERNETOPENURLW)(HINTERNET hInternet, LPCWSTR lpszUrl, LPCWSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXA)(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXW)(HKEY hKey, LPCWSTR lpSubKey, DWORD Reserved, LPWSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
 typedef BOOL(WINAPI* WRITEFILE)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped);
@@ -30,6 +31,7 @@ CREATEPROCESSA orig_CreateProcessA;
 CREATEPROCESSW orig_CreateProcessW;
 INETPTON orig_inet_pton;
 INTERNETOPENURLA orig_InternetOpenUrlA;
+INTERNETOPENURLW orig_InternetOpenUrlW;
 REGCREATEKEYEXA orig_RegCreateKeyExA;
 REGCREATEKEYEXW orig_RegCreateKeyExW;
 WRITEFILE orig_WriteFile;
@@ -175,6 +177,23 @@ HINTERNET InternetOpenUrlA_Hook(
     if (res == IDNO)
         ExitProcess(1);
     return orig_InternetOpenUrlA(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwFlags, dwContext);
+}
+
+HINTERNET InternetOpenUrlW_Hook(
+    HINTERNET hInternet,
+    LPCWSTR   lpszUrl,
+    LPCWSTR   lpszHeaders,
+    DWORD     dwHeadersLength,
+    DWORD     dwFlags,
+    DWORD_PTR dwContext
+) {
+    PreHook(1, "InternetOpenUrlW");
+    char buf[300];
+    snprintf(buf, 300, "This executable attempt to access URL below\n%ls\nContinue execution?", lpszUrl);
+    res = MsgBox(buf);
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_InternetOpenUrlW(hInternet, lpszUrl, lpszHeaders, dwHeadersLength, dwFlags, dwContext);
 }
 
 LSTATUS WINAPI RegCreateKeyExA_Hook(
@@ -339,6 +358,7 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "CreateProcessW", (void**)&orig_CreateProcessW, (void*)CreateProcessW_Hook),
         HookFunc("ws2_32.dll", "inet_pton", (void**)&orig_inet_pton, (void*)inet_pton_Hook),
         HookFunc("WinInet.dll", "InternetOpenUrlA", (void**)&orig_InternetOpenUrlA, (void*)InternetOpenUrlA_Hook),
+        HookFunc("WinInet.dll", "InternetOpenUrlW", (void**)&orig_InternetOpenUrlW, (void*)InternetOpenUrlW_Hook),
         HookFunc("advapi32.dll", "RegCreateKeyExA", (void**)&orig_RegCreateKeyExA, (void*)RegCreateKeyExA_Hook),
         HookFunc("advapi32.dll", "RegCreateKeyExW", (void**)&orig_RegCreateKeyExW, (void*)RegCreateKeyExW_Hook),
         HookFunc("kernel32.dll", "WriteFile", (void**)&orig_WriteFile, (void*)WriteFile_Hook),

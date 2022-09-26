@@ -1,8 +1,9 @@
-#include <windows.h>
+﻿#include <windows.h>
 #include <wininet.h>
 #include <stdio.h>
+#pragma comment( lib, "wininet" )
 
-int WINAPI WinMain(
+int main(
 	HINSTANCE hInstance,
 	HINSTANCE hPrevInstance,
 	LPSTR lpCmdLine,
@@ -11,8 +12,8 @@ int WINAPI WinMain(
 	HINTERNET hInternet;
 	HINTERNET hFile;
 
-	hInternet = InternetOpen("Agent", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
-	hFile = InternetOpenUrl(hInternet, "https://github.com/MachineHunter/SafeExecute", NULL, 0, INTERNET_FLAG_RELOAD, 0);
+	hInternet = InternetOpenA("Agent", INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+	hFile = InternetOpenUrlA(hInternet, "https://github.com/MachineHunter/SafeExecute", NULL, 0, INTERNET_FLAG_RELOAD, 0);
 
 	while (1) {
 		DWORD readsize = 1000;
