@@ -102,6 +102,7 @@ namespace SafeExecutorGUI {
 	private: System::Windows::Forms::TextBox^ FileSelectTextBox;
 	private: System::Windows::Forms::Button^ ExecBtn;
 	private: System::Windows::Forms::TreeView^ treeView;
+	private: System::Windows::Forms::RichTextBox^ OutputBox;
 
 
 
@@ -125,8 +126,10 @@ namespace SafeExecutorGUI {
 			this->checklist_panel = (gcnew System::Windows::Forms::Panel());
 			this->treeView = (gcnew System::Windows::Forms::TreeView());
 			this->output_panel = (gcnew System::Windows::Forms::Panel());
+			this->OutputBox = (gcnew System::Windows::Forms::RichTextBox());
 			this->target_exe_selection_panel->SuspendLayout();
 			this->checklist_panel->SuspendLayout();
+			this->output_panel->SuspendLayout();
 			this->SuspendLayout();
 			// 
 			// target_exe_selection_panel
@@ -205,12 +208,24 @@ namespace SafeExecutorGUI {
 			// output_panel
 			// 
 			this->output_panel->BackColor = System::Drawing::SystemColors::Info;
+			this->output_panel->Controls->Add(this->OutputBox);
 			this->output_panel->Dock = System::Windows::Forms::DockStyle::Right;
 			this->output_panel->Location = System::Drawing::Point(643, 208);
 			this->output_panel->Margin = System::Windows::Forms::Padding(4);
 			this->output_panel->Name = L"output_panel";
 			this->output_panel->Size = System::Drawing::Size(505, 540);
 			this->output_panel->TabIndex = 2;
+			// 
+			// OutputBox
+			// 
+			this->OutputBox->Anchor = static_cast<System::Windows::Forms::AnchorStyles>((((System::Windows::Forms::AnchorStyles::Top | System::Windows::Forms::AnchorStyles::Bottom)
+				| System::Windows::Forms::AnchorStyles::Left)
+				| System::Windows::Forms::AnchorStyles::Right));
+			this->OutputBox->Location = System::Drawing::Point(18, 19);
+			this->OutputBox->Name = L"OutputBox";
+			this->OutputBox->Size = System::Drawing::Size(475, 505);
+			this->OutputBox->TabIndex = 0;
+			this->OutputBox->Text = L"";
 			// 
 			// MainWindow
 			// 
@@ -226,6 +241,7 @@ namespace SafeExecutorGUI {
 			this->target_exe_selection_panel->ResumeLayout(false);
 			this->target_exe_selection_panel->PerformLayout();
 			this->checklist_panel->ResumeLayout(false);
+			this->output_panel->ResumeLayout(false);
 			this->ResumeLayout(false);
 
 		}
@@ -321,11 +337,22 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 		snprintf(dllPath, MAX_PATH, "%s\\%s", path, "SafeExecute\\x64\\Debug\\SafeExecute.dll");
 
 		if (PathFileExistsA(executorPath) && PathFileExistsA(dllPath)) {
+			HANDLE readPipe, writePipe;
+			SECURITY_ATTRIBUTES sa;
+			sa.nLength = sizeof(sa);
+			sa.bInheritHandle = TRUE;
+			sa.lpSecurityDescriptor = NULL;
+			CreatePipe(&readPipe, &writePipe, &sa, 0);
+
 			STARTUPINFOA si;
 			PROCESS_INFORMATION pi;
 			memset(&si, 0, sizeof(si));
 			memset(&pi, 0, sizeof(pi));
 			si.cb = sizeof(si);
+			si.dwFlags = STARTF_USESTDHANDLES;
+			si.hStdInput = NULL;
+			si.hStdOutput = writePipe;
+			si.hStdError = writePipe;
 
 			char cmd[MAX_PATH * 4];
 			memset(cmd, 0, sizeof(cmd));
@@ -335,10 +362,49 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 			strcat_s(cmd, " ");
 			strcat_s(cmd, exePath);
 			
-			if (!CreateProcessA(NULL, cmd, NULL, NULL, 0, 0, NULL, NULL, &si, &pi)) {
+			if (!CreateProcessA(NULL, cmd, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
 				MessageBox::Show("Couldn't start executor process", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 			}
 			
+			HANDLE childProcess = pi.hProcess;
+			CloseHandle(pi.hThread);
+
+			char readBuf[1025];
+			bool end = false;
+			char mem[20000];
+			memset(mem, 0, 20000);
+			DWORD memSz = 0;
+			Sleep(500);
+			do {
+				DWORD totalLen, len;
+				if (WaitForSingleObject(childProcess, 100) == WAIT_OBJECT_0) {
+					end = true;
+				}
+				if (PeekNamedPipe(readPipe, NULL, 0, NULL, &totalLen, NULL) == 0)
+					break;
+				if (0 < totalLen) {
+					if (ReadFile(readPipe, readBuf, sizeof(readBuf) - 1, &len, NULL) == 0)
+						break;
+					readBuf[len] = 0;
+
+					if (sizeof(mem) - 1 < memSz + len) {
+						mem[0] = 0;
+						memSz = 0;
+					}
+					memSz += len;
+					strcat_s(mem, sizeof(mem), readBuf);
+					String^ buf = gcnew String(mem);
+					OutputBox->Text = buf;
+					// SetWindowTextA(hWnd, mem);
+					// SendMessage(hWnd, WM_VSCROLL, SB_BOTTOM, 0);
+					if (totalLen > len)
+						end = false;
+				}
+			} while (end == false);
+
+			CloseHandle(writePipe);
+			CloseHandle(readPipe);
+			CloseHandle(pi.hProcess);
 		}
 		else MessageBox::Show("Something went wrong in Path Calculation", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 		return;
