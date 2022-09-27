@@ -19,8 +19,8 @@ typedef LSTATUS(WINAPI* REGCREATEKEYEXW)(HKEY hKey, LPCWSTR lpSubKey, DWORD Rese
 typedef BOOL(WINAPI* WRITEFILE)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped);
 typedef BOOL(WINAPI* DELETEFILEW)(LPCWSTR lpFileName);
 typedef BOOL(WINAPI* DELETEFILEA)(LPCSTR lpFileName);
-typedef BOOL(WINAPI* MOVEFILEA)(LPCTSTR lpExistingFileName, LPCTSTR lpNewFileName);
-typedef BOOL(WINAPI* MOVEFILEW)(LPCTSTR lpExistingFileName, LPCTSTR lpNewFileName);
+typedef BOOL(WINAPI* MOVEFILEA)(LPCSTR lpExistingFileName, LPCSTR lpNewFileName);
+typedef BOOL(WINAPI* MOVEFILEW)(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName);
 typedef BOOL(WINAPI* MOVEFILEEXA)(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, DWORD  dwFlags);
 typedef BOOL(WINAPI* MOVEFILEEXW)(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, DWORD  dwFlags);
 typedef BOOL(WINAPI* CRYPTDECRYPT)(HCRYPTKEY hKey, HCRYPTHASH hHash, BOOL Final, DWORD dwFlags, BYTE* pbData, DWORD* pdwDataLen);
@@ -43,11 +43,11 @@ MOVEFILEEXA orig_MoveFileExA;
 MOVEFILEEXW orig_MoveFileExW;
 CRYPTDECRYPT orig_CryptDecrypt;
 
-std::string WStringToString(const std::wstring& s)
+std::string WStringToString(const std::wstring& ws)
 {
-    std::string temp(s.length(), ' ');
-    std::copy(s.begin(), s.end(), temp.begin());
-    return temp;
+    std::string s(ws.length(), ' ');
+    std::copy(ws.begin(), ws.end(), s.begin());
+    return s;
 }
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
@@ -272,8 +272,8 @@ bool WINAPI DeleteFileA_Hook(
 }
 
 BOOL WINAPI MoveFileA_Hook(
-    LPCTSTR lpExistingFileName,
-    LPCTSTR lpNewFileName
+    LPCSTR lpExistingFileName,
+    LPCSTR lpNewFileName
 ) {
     PreHook(1, "MoveFileA");
     // MoveFileA Hook
