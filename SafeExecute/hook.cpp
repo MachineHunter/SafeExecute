@@ -412,11 +412,3 @@ void Hook() {
         }
     }
 }
-
-
-std::string WStringToString(const std::wstring& s)
-{
-    std::string temp(s.length(), ' ');
-    std::copy(s.begin(), s.end(), temp.begin());
-    return temp;
-}
