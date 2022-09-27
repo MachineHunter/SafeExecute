@@ -18,6 +18,7 @@ namespace SafeExecutorGUI {
 	using namespace System::Drawing;
 	using namespace System::IO;
 	using namespace System::Runtime::InteropServices;
+	using namespace System::Diagnostics;
 	using namespace msclr::interop;
 	typedef System::Collections::Generic::Queue<TreeNode^> NodeQueue;
 	typedef System::Collections::Generic::List<String^> StrList;
@@ -102,7 +103,11 @@ namespace SafeExecutorGUI {
 	private: System::Windows::Forms::TextBox^ FileSelectTextBox;
 	private: System::Windows::Forms::Button^ ExecBtn;
 	private: System::Windows::Forms::TreeView^ treeView;
-
+	private: System::Windows::Forms::RichTextBox^ OutputBox;
+	private: System::Windows::Forms::TabControl^ OutputTabControl;
+	private: System::Windows::Forms::TabPage^ stdoutPage;
+	private: System::Windows::Forms::TabPage^ stderrPage;
+	private: System::Windows::Forms::RichTextBox^ OutputErrBox;
 
 
 	private:
@@ -125,8 +130,17 @@ namespace SafeExecutorGUI {
 			this->checklist_panel = (gcnew System::Windows::Forms::Panel());
 			this->treeView = (gcnew System::Windows::Forms::TreeView());
 			this->output_panel = (gcnew System::Windows::Forms::Panel());
+			this->OutputTabControl = (gcnew System::Windows::Forms::TabControl());
+			this->stdoutPage = (gcnew System::Windows::Forms::TabPage());
+			this->OutputBox = (gcnew System::Windows::Forms::RichTextBox());
+			this->stderrPage = (gcnew System::Windows::Forms::TabPage());
+			this->OutputErrBox = (gcnew System::Windows::Forms::RichTextBox());
 			this->target_exe_selection_panel->SuspendLayout();
 			this->checklist_panel->SuspendLayout();
+			this->output_panel->SuspendLayout();
+			this->OutputTabControl->SuspendLayout();
+			this->stdoutPage->SuspendLayout();
+			this->stderrPage->SuspendLayout();
 			this->SuspendLayout();
 			// 
 			// target_exe_selection_panel
@@ -204,13 +218,72 @@ namespace SafeExecutorGUI {
 			// 
 			// output_panel
 			// 
-			this->output_panel->BackColor = System::Drawing::SystemColors::Info;
+			this->output_panel->BackColor = System::Drawing::Color::White;
+			this->output_panel->Controls->Add(this->OutputTabControl);
 			this->output_panel->Dock = System::Windows::Forms::DockStyle::Right;
 			this->output_panel->Location = System::Drawing::Point(643, 208);
 			this->output_panel->Margin = System::Windows::Forms::Padding(4);
 			this->output_panel->Name = L"output_panel";
 			this->output_panel->Size = System::Drawing::Size(505, 540);
 			this->output_panel->TabIndex = 2;
+			// 
+			// OutputTabControl
+			// 
+			this->OutputTabControl->Controls->Add(this->stdoutPage);
+			this->OutputTabControl->Controls->Add(this->stderrPage);
+			this->OutputTabControl->Dock = System::Windows::Forms::DockStyle::Fill;
+			this->OutputTabControl->Location = System::Drawing::Point(0, 0);
+			this->OutputTabControl->Name = L"OutputTabControl";
+			this->OutputTabControl->SelectedIndex = 0;
+			this->OutputTabControl->Size = System::Drawing::Size(505, 540);
+			this->OutputTabControl->TabIndex = 1;
+			// 
+			// stdoutPage
+			// 
+			this->stdoutPage->Controls->Add(this->OutputBox);
+			this->stdoutPage->Location = System::Drawing::Point(4, 25);
+			this->stdoutPage->Name = L"stdoutPage";
+			this->stdoutPage->Padding = System::Windows::Forms::Padding(3);
+			this->stdoutPage->Size = System::Drawing::Size(497, 511);
+			this->stdoutPage->TabIndex = 0;
+			this->stdoutPage->Text = L"標準出力";
+			this->stdoutPage->UseVisualStyleBackColor = true;
+			// 
+			// OutputBox
+			// 
+			this->OutputBox->BackColor = System::Drawing::Color::Black;
+			this->OutputBox->Cursor = System::Windows::Forms::Cursors::IBeam;
+			this->OutputBox->Dock = System::Windows::Forms::DockStyle::Fill;
+			this->OutputBox->ForeColor = System::Drawing::Color::White;
+			this->OutputBox->Location = System::Drawing::Point(3, 3);
+			this->OutputBox->Name = L"OutputBox";
+			this->OutputBox->ReadOnly = true;
+			this->OutputBox->Size = System::Drawing::Size(491, 505);
+			this->OutputBox->TabIndex = 0;
+			this->OutputBox->Text = L"";
+			// 
+			// stderrPage
+			// 
+			this->stderrPage->Controls->Add(this->OutputErrBox);
+			this->stderrPage->Location = System::Drawing::Point(4, 25);
+			this->stderrPage->Name = L"stderrPage";
+			this->stderrPage->Padding = System::Windows::Forms::Padding(3);
+			this->stderrPage->Size = System::Drawing::Size(497, 511);
+			this->stderrPage->TabIndex = 1;
+			this->stderrPage->Text = L"エラー出力";
+			this->stderrPage->UseVisualStyleBackColor = true;
+			// 
+			// OutputErrBox
+			// 
+			this->OutputErrBox->BackColor = System::Drawing::Color::Black;
+			this->OutputErrBox->Dock = System::Windows::Forms::DockStyle::Fill;
+			this->OutputErrBox->ForeColor = System::Drawing::Color::White;
+			this->OutputErrBox->Location = System::Drawing::Point(3, 3);
+			this->OutputErrBox->Name = L"OutputErrBox";
+			this->OutputErrBox->ReadOnly = true;
+			this->OutputErrBox->Size = System::Drawing::Size(491, 505);
+			this->OutputErrBox->TabIndex = 0;
+			this->OutputErrBox->Text = L"";
 			// 
 			// MainWindow
 			// 
@@ -226,6 +299,10 @@ namespace SafeExecutorGUI {
 			this->target_exe_selection_panel->ResumeLayout(false);
 			this->target_exe_selection_panel->PerformLayout();
 			this->checklist_panel->ResumeLayout(false);
+			this->output_panel->ResumeLayout(false);
+			this->OutputTabControl->ResumeLayout(false);
+			this->stdoutPage->ResumeLayout(false);
+			this->stderrPage->ResumeLayout(false);
 			this->ResumeLayout(false);
 
 		}
@@ -321,24 +398,36 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 		snprintf(dllPath, MAX_PATH, "%s\\%s", path, "SafeExecute\\x64\\Debug\\SafeExecute.dll");
 
 		if (PathFileExistsA(executorPath) && PathFileExistsA(dllPath)) {
-			STARTUPINFOA si;
-			PROCESS_INFORMATION pi;
-			memset(&si, 0, sizeof(si));
-			memset(&pi, 0, sizeof(pi));
-			si.cb = sizeof(si);
+			char arg[MAX_PATH * 3];
+			memset(arg, 0, sizeof(arg));
+			strcat_s(arg, dllPath);
+			strcat_s(arg, " ");
+			strcat_s(arg, exePath);
+			
+			Process^ pProc = gcnew Process();
+			pProc->StartInfo->FileName = gcnew String(executorPath);
+			pProc->StartInfo->Arguments = gcnew String(arg);
+			pProc->StartInfo->UseShellExecute = false;
+			pProc->StartInfo->RedirectStandardOutput = true;
+			pProc->StartInfo->RedirectStandardError = true;
+			// pProc->StartInfo->RedirectStandardInput = true;
+			pProc->Start();
 
-			char cmd[MAX_PATH * 4];
-			memset(cmd, 0, sizeof(cmd));
-			strcat_s(cmd, executorPath);
-			strcat_s(cmd, " ");
-			strcat_s(cmd, dllPath);
-			strcat_s(cmd, " ");
-			strcat_s(cmd, exePath);
-			
-			if (!CreateProcessA(NULL, cmd, NULL, NULL, 0, 0, NULL, NULL, &si, &pi)) {
-				MessageBox::Show("Couldn't start executor process", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+			String^ stdOut = "";
+			String^ stdErr = "";
+			while (!pProc->HasExited) {
+				stdOut += pProc->StandardOutput->ReadToEnd();
+				stdErr += pProc->StandardError->ReadToEnd();
 			}
-			
+			if (stdOut->Length != 0) {
+				OutputBox->Text += stdOut;
+				OutputBox->Text += "\n";
+			}
+			if (stdErr->Length != 0) {
+				OutputErrBox->Text += stdErr;
+				OutputErrBox->Text += "\n";
+			}
+			pProc->WaitForExit();
 		}
 		else MessageBox::Show("Something went wrong in Path Calculation", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 		return;
