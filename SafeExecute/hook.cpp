@@ -374,7 +374,7 @@ SC_HANDLE WINAPI CreateServiceW_Hook(
 ) {
     PreHook(1, "CreateServiceW");
     char buf[300];
-    snprintf(buf, 300, "Windows service creation detected.\nService name : %s\nBinary Path : %s\nContinue execution?", lpServiceName, lpBinaryPathName);
+    snprintf(buf, 300, "Windows service creation detected.\nService name : %S\nBinary Path : %S\nContinue execution?", lpServiceName, lpBinaryPathName);
     res = MsgBox(buf);
     if (res == IDNO)
         ExitProcess(1);
