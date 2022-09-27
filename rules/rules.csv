@@ -13,3 +13,5 @@ IsDebuggerPresent,1
 CryptDecrypt,1
 SetFileAttributesA,1
 SetFileAttributesW,1
+CreateServiceA,1
+CreateServiceW,1
