@@ -26,6 +26,8 @@ typedef BOOL(WINAPI* MOVEFILEEXW)(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileN
 typedef BOOL(WINAPI* CRYPTDECRYPT)(HCRYPTKEY hKey, HCRYPTHASH hHash, BOOL Final, DWORD dwFlags, BYTE* pbData, DWORD* pdwDataLen);
 typedef SC_HANDLE(WINAPI* CREATESERVICEA)(SC_HANDLE hSCManager, LPCSTR lpServiceName, LPCSTR lpDisplayName, DWORD dwDesiredAccess, DWORD dwServiceType, DWORD dwStartType, DWORD dwErrorControl, LPCSTR lpBinaryPathName, LPCSTR lpLoadOrderGroup, LPDWORD lpdwTagId, LPCSTR lpDependencies, LPCSTR lpServiceStartName, LPCSTR lpPassword);
 typedef SC_HANDLE(WINAPI* CREATESERVICEW)(SC_HANDLE hSCManager, LPCWSTR lpServiceName, LPCWSTR lpDisplayName, DWORD dwDesiredAccess, DWORD dwServiceType, DWORD dwStartType, DWORD dwErrorControl, LPCWSTR lpBinaryPathName, LPCWSTR lpLoadOrderGroup, LPDWORD lpdwTagId, LPCWSTR lpDependencies, LPCWSTR lpServiceStartName, LPCWSTR lpPassword);
+typedef BOOL(WINAPI* SYSTEMPARAMETERSINFOA)(UINT uiAction, UINT uiParam, PVOID pvParam, UINT fWinIni);
+typedef BOOL(WINAPI* SYSTEMPARAMETERSINFOW)(UINT uiAction, UINT uiParam, PVOID pvParam, UINT fWinIni);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 SETFILEATTRIBUTESW orig_SetFileAttributesW;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
@@ -46,6 +48,9 @@ MOVEFILEEXW orig_MoveFileExW;
 CRYPTDECRYPT orig_CryptDecrypt;
 CREATESERVICEA orig_CreateServiceA;
 CREATESERVICEW orig_CreateServiceW;
+SYSTEMPARAMETERSINFOA orig_SystemParametersInfoA;
+SYSTEMPARAMETERSINFOW orig_SystemParametersInfoW;
+
 
 std::string WStringToString(const std::wstring& ws)
 {
@@ -400,6 +405,38 @@ SC_HANDLE WINAPI CreateServiceW_Hook(
         return orig_CreateServiceW(hSCManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
 }
 
+bool WINAPI SystemParametersInfoA_Hook(
+    UINT uiAction,
+    UINT uiParam,
+    PVOID pvParam,
+    UINT fWinIni
+) {
+    // デスクトップの壁紙変更の検知
+    if ((uiAction & SPI_SETDESKWALLPAPER) != 0) {
+        PreHook(2, "SystemParametersInfoA", "SPI_SETDESKWALLPAPER");
+        res = MsgBox("Changing desktop wall paper Detected\nContinue execution?");
+        if (res == IDNO)
+            ExitProcess(1);
+        return orig_SystemParametersInfoA(uiAction, uiParam, pvParam, fWinIni);
+    }
+}
+
+bool WINAPI SystemParametersInfoW_Hook(
+    UINT uiAction,
+    UINT uiParam,
+    PVOID pvParam,
+    UINT fWinIni
+) {
+    // デスクトップの壁紙変更の検知
+    if ((uiAction & SPI_SETDESKWALLPAPER) != 0) {
+        PreHook(2, "SystemParametersInfoW", "SPI_SETDESKWALLPAPER");
+        res = MsgBox("Changing desktop wall paper Detected\nContinue execution?");
+        if (res == IDNO)
+            ExitProcess(1);
+        return orig_SystemParametersInfoW(uiAction, uiParam, pvParam, fWinIni);
+    }
+}
+
 // 3: フックする全てのWindowsAPIのリスト
 HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
@@ -421,7 +458,9 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "MoveFileExW", (void**)&orig_MoveFileExW, (void*)MoveFileExW_Hook),
         HookFunc("advapi32.dll", "CryptDecrypt", (void**)&orig_CryptDecrypt, (void*)CryptDecrypt_Hook),
         HookFunc("advapi32.dll", "CreateServiceA", (void**)&orig_CreateServiceA, (void*)CreateServiceA_Hook),
-        HookFunc("advapi32.dll", "CreateServiceW", (void**)&orig_CreateServiceW, (void*)CreateServiceW_Hook)
+        HookFunc("advapi32.dll", "CreateServiceW", (void**)&orig_CreateServiceW, (void*)CreateServiceW_Hook),
+        HookFunc("user32.dll", "SystemParametersInfoA", (void**)&orig_SystemParametersInfoA, (void*)SystemParametersInfoA_Hook),
+        HookFunc("user32.dll", "SystemParametersInfoW", (void**)&orig_SystemParametersInfoW, (void*)SystemParametersInfoW_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================
