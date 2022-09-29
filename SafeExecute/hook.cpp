@@ -29,6 +29,9 @@ typedef SC_HANDLE(WINAPI* CREATESERVICEW)(SC_HANDLE hSCManager, LPCWSTR lpServic
 typedef INT(WINAPI* GETLOCALEINFOA)(LCID Locale, LCTYPE LCType, LPSTR lpLCData, int cchData);
 typedef INT(WINAPI* GETLOCALEINFOW)(LCID Locale, LCTYPE LCType, LPWSTR lpLCData, int cchData);
 typedef INT(WINAPI* GETLOCALEINFOEX)(LPCWSTR lpLocaleName, LCTYPE LCType, LPWSTR lpLCData, int cchData);
+typedef BOOL(WINAPI* CREATETIMERQUEUETIMER)(PHANDLE phNewTimer, HANDLE TimerQueue, WAITORTIMERCALLBACK Callback, PVOID Parameter, DWORD DueTime, DWORD Period, ULONG Flags);
+typedef BOOL(WINAPI* SYSTEMPARAMETERSINFOA)(UINT uiAction, UINT uiParam, PVOID pvParam, UINT fWinIni);
+typedef BOOL(WINAPI* SYSTEMPARAMETERSINFOW)(UINT uiAction, UINT uiParam, PVOID pvParam, UINT fWinIni);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 SETFILEATTRIBUTESW orig_SetFileAttributesW;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
@@ -52,6 +55,10 @@ CREATESERVICEW orig_CreateServiceW;
 GETLOCALEINFOA orig_GetLocaleInfoA;
 GETLOCALEINFOW orig_GetLocaleInfoW;
 GETLOCALEINFOEX orig_GetLocaleInfoEx;
+CREATETIMERQUEUETIMER orig_CreateTimerQueueTimer;
+SYSTEMPARAMETERSINFOA orig_SystemParametersInfoA;
+SYSTEMPARAMETERSINFOW orig_SystemParametersInfoW;
+
 
 std::string WStringToString(const std::wstring& ws)
 {
@@ -451,6 +458,57 @@ INT WINAPI GetLocaleInfoEx_Hook(
     return orig_GetLocaleInfoEx(lpLocaleName,LCType,lpLCData,cchData);
 }
 
+bool WINAPI CreateTimerQueueTimer_Hook(
+    PHANDLE             phNewTimer,
+    HANDLE              TimerQueue,
+    WAITORTIMERCALLBACK Callback,
+    PVOID               Parameter,
+    DWORD               DueTime,
+    DWORD               Period,
+    ULONG               Flags
+) {
+    PreHook(1, "CreateTimerQueueTimer");
+    
+    // CreateTimerQueueTimer
+    res = MsgBox("Timer creation detected\nContinue execution?");
+    if (res == IDNO) 
+        ExitProcess(1);
+    
+    return orig_CreateTimerQueueTimer(phNewTimer, TimerQueue, Callback, Parameter, DueTime, Period, Flags);
+}
+
+bool WINAPI SystemParametersInfoA_Hook(
+    UINT uiAction,
+    UINT uiParam,
+    PVOID pvParam,
+    UINT fWinIni
+) {
+    // デスクトップの壁紙変更の検知
+    if ((uiAction & SPI_SETDESKWALLPAPER) != 0) {
+        PreHook(2, "SystemParametersInfoA", "SPI_SETDESKWALLPAPER");
+        res = MsgBox("Changing desktop wall paper Detected\nContinue execution?");
+        if (res == IDNO)
+            ExitProcess(1);
+        return orig_SystemParametersInfoA(uiAction, uiParam, pvParam, fWinIni);
+    }
+}
+
+bool WINAPI SystemParametersInfoW_Hook(
+    UINT uiAction,
+    UINT uiParam,
+    PVOID pvParam,
+    UINT fWinIni
+) {
+    // デスクトップの壁紙変更の検知
+    if ((uiAction & SPI_SETDESKWALLPAPER) != 0) {
+        PreHook(2, "SystemParametersInfoW", "SPI_SETDESKWALLPAPER");
+        res = MsgBox("Changing desktop wall paper Detected\nContinue execution?");
+        if (res == IDNO)
+            ExitProcess(1);
+        return orig_SystemParametersInfoW(uiAction, uiParam, pvParam, fWinIni);
+    }
+}
+
 // 3: フックする全てのWindowsAPIのリスト
 HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
@@ -475,7 +533,10 @@ HookList hooklist = {
         HookFunc("advapi32.dll", "CreateServiceW", (void**)&orig_CreateServiceW, (void*)CreateServiceW_Hook),
         HookFunc("kernel32.dll", "GetLocaleInfoA", (void**)&orig_GetLocaleInfoA, (void*)GetLocaleInfoA_Hook),
         HookFunc("kernel32.dll", "GetLocaleInfoW", (void**)&orig_GetLocaleInfoW, (void*)GetLocaleInfoW_Hook),
-        HookFunc("kernel32.dll", "GetLocaleInfoEx", (void**)&orig_GetLocaleInfoEx, (void*)GetLocaleInfoEx_Hook)
+        HookFunc("kernel32.dll", "GetLocaleInfoEx", (void**)&orig_GetLocaleInfoEx, (void*)GetLocaleInfoEx_Hook),
+        HookFunc("kernel32.dll", "CreateTimerQueueTimer", (void**)&orig_CreateTimerQueueTimer, (void*)CreateTimerQueueTimer_Hook),
+        HookFunc("user32.dll", "SystemParametersInfoA", (void**)&orig_SystemParametersInfoA, (void*)SystemParametersInfoA_Hook),
+        HookFunc("user32.dll", "SystemParametersInfoW", (void**)&orig_SystemParametersInfoW, (void*)SystemParametersInfoW_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================

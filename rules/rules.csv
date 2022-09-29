@@ -17,3 +17,5 @@ CreateServiceA,1
 CreateServiceW,1
 GetLocaleInfoA,1
 GetLocaleInfoW,1
+SystemParametersInfoA, 1
+SystemParametersInfoW, 1
