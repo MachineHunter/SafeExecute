@@ -26,6 +26,8 @@ typedef BOOL(WINAPI* MOVEFILEEXW)(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileN
 typedef BOOL(WINAPI* CRYPTDECRYPT)(HCRYPTKEY hKey, HCRYPTHASH hHash, BOOL Final, DWORD dwFlags, BYTE* pbData, DWORD* pdwDataLen);
 typedef SC_HANDLE(WINAPI* CREATESERVICEA)(SC_HANDLE hSCManager, LPCSTR lpServiceName, LPCSTR lpDisplayName, DWORD dwDesiredAccess, DWORD dwServiceType, DWORD dwStartType, DWORD dwErrorControl, LPCSTR lpBinaryPathName, LPCSTR lpLoadOrderGroup, LPDWORD lpdwTagId, LPCSTR lpDependencies, LPCSTR lpServiceStartName, LPCSTR lpPassword);
 typedef SC_HANDLE(WINAPI* CREATESERVICEW)(SC_HANDLE hSCManager, LPCWSTR lpServiceName, LPCWSTR lpDisplayName, DWORD dwDesiredAccess, DWORD dwServiceType, DWORD dwStartType, DWORD dwErrorControl, LPCWSTR lpBinaryPathName, LPCWSTR lpLoadOrderGroup, LPDWORD lpdwTagId, LPCWSTR lpDependencies, LPCWSTR lpServiceStartName, LPCWSTR lpPassword);
+typedef BOOL(WINAPI* OPENPROCESSTOKEN)(HANDLE  ProcessHandle, DWORD   DesiredAccess, PHANDLE TokenHandle);
+typedef BOOL(WINAPI* ADJUSTTOKENPRIVILEGES)(HANDLE TokenHandle, BOOL DisableAllPrivileges, PTOKEN_PRIVILEGES NewState, DWORD BufferLength, PTOKEN_PRIVILEGES PreviousState, PDWORD ReturnLength);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 SETFILEATTRIBUTESW orig_SetFileAttributesW;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
@@ -46,6 +48,8 @@ MOVEFILEEXW orig_MoveFileExW;
 CRYPTDECRYPT orig_CryptDecrypt;
 CREATESERVICEA orig_CreateServiceA;
 CREATESERVICEW orig_CreateServiceW;
+OPENPROCESSTOKEN orig_OpenProcessToken;
+ADJUSTTOKENPRIVILEGES orig_AdjustTokenPrivileges;
 
 std::string WStringToString(const std::wstring& ws)
 {
@@ -400,6 +404,33 @@ SC_HANDLE WINAPI CreateServiceW_Hook(
         return orig_CreateServiceW(hSCManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
 }
 
+BOOL WINAPI OpenProcessToken_Hook(
+    HANDLE  ProcessHandle,
+    DWORD   DesiredAccess,
+    PHANDLE TokenHandle
+) {
+    PreHook(1, "OpenProcessToken");
+    res = MsgBox("OpenProcessToken detected.\nContinue execution?");
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_OpenProcessToken(ProcessHandle, DesiredAccess, TokenHandle);
+}
+
+BOOL AdjustTokenPrivileges_Hook(
+    HANDLE            TokenHandle,
+    BOOL              DisableAllPrivileges,
+    PTOKEN_PRIVILEGES NewState,
+    DWORD             BufferLength,
+    PTOKEN_PRIVILEGES PreviousState,
+    PDWORD            ReturnLength
+) {
+    PreHook(1, "AdjustTokenPrivileges");
+    res = MsgBox("AdjustTokenPrivileges detected.\nContinue execution?");
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_AdjustTokenPrivileges(TokenHandle, DisableAllPrivileges, NewState, BufferLength, PreviousState, ReturnLength);
+}
+
 // 3: フックする全てのWindowsAPIのリスト
 HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
@@ -421,7 +452,9 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "MoveFileExW", (void**)&orig_MoveFileExW, (void*)MoveFileExW_Hook),
         HookFunc("advapi32.dll", "CryptDecrypt", (void**)&orig_CryptDecrypt, (void*)CryptDecrypt_Hook),
         HookFunc("advapi32.dll", "CreateServiceA", (void**)&orig_CreateServiceA, (void*)CreateServiceA_Hook),
-        HookFunc("advapi32.dll", "CreateServiceW", (void**)&orig_CreateServiceW, (void*)CreateServiceW_Hook)
+        HookFunc("advapi32.dll", "CreateServiceW", (void**)&orig_CreateServiceW, (void*)CreateServiceW_Hook),
+        HookFunc("advapi32.dll", "OpenProcessToken", (void**)&orig_OpenProcessToken, (void*)OpenProcessToken_Hook),
+        HookFunc("advapi32.dll", "AdjustTokenPrivileges", (void**)&orig_AdjustTokenPrivileges, (void*)AdjustTokenPrivileges_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================
