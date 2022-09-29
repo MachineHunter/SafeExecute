@@ -15,3 +15,5 @@ SetFileAttributesA,1
 SetFileAttributesW,1
 CreateServiceA,1
 CreateServiceW,1
+GetLocaleInfoA,1
+GetLocaleInfoW,1

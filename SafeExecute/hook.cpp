@@ -26,6 +26,9 @@ typedef BOOL(WINAPI* MOVEFILEEXW)(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileN
 typedef BOOL(WINAPI* CRYPTDECRYPT)(HCRYPTKEY hKey, HCRYPTHASH hHash, BOOL Final, DWORD dwFlags, BYTE* pbData, DWORD* pdwDataLen);
 typedef SC_HANDLE(WINAPI* CREATESERVICEA)(SC_HANDLE hSCManager, LPCSTR lpServiceName, LPCSTR lpDisplayName, DWORD dwDesiredAccess, DWORD dwServiceType, DWORD dwStartType, DWORD dwErrorControl, LPCSTR lpBinaryPathName, LPCSTR lpLoadOrderGroup, LPDWORD lpdwTagId, LPCSTR lpDependencies, LPCSTR lpServiceStartName, LPCSTR lpPassword);
 typedef SC_HANDLE(WINAPI* CREATESERVICEW)(SC_HANDLE hSCManager, LPCWSTR lpServiceName, LPCWSTR lpDisplayName, DWORD dwDesiredAccess, DWORD dwServiceType, DWORD dwStartType, DWORD dwErrorControl, LPCWSTR lpBinaryPathName, LPCWSTR lpLoadOrderGroup, LPDWORD lpdwTagId, LPCWSTR lpDependencies, LPCWSTR lpServiceStartName, LPCWSTR lpPassword);
+typedef INT(WINAPI* GETLOCALEINFOA)(LCID Locale, LCTYPE LCType, LPSTR lpLCData, int cchData);
+typedef INT(WINAPI* GETLOCALEINFOW)(LCID Locale, LCTYPE LCType, LPWSTR lpLCData, int cchData);
+typedef INT(WINAPI* GETLOCALEINFOEX)(LPCWSTR lpLocaleName, LCTYPE LCType, LPWSTR lpLCData, int cchData);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 SETFILEATTRIBUTESW orig_SetFileAttributesW;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
@@ -46,6 +49,9 @@ MOVEFILEEXW orig_MoveFileExW;
 CRYPTDECRYPT orig_CryptDecrypt;
 CREATESERVICEA orig_CreateServiceA;
 CREATESERVICEW orig_CreateServiceW;
+GETLOCALEINFOA orig_GetLocaleInfoA;
+GETLOCALEINFOW orig_GetLocaleInfoW;
+GETLOCALEINFOEX orig_GetLocaleInfoEx;
 
 std::string WStringToString(const std::wstring& ws)
 {
@@ -373,7 +379,7 @@ SC_HANDLE WINAPI CreateServiceA_Hook(
     res = MsgBox(buf);
     if (res == IDNO)
         ExitProcess(1);
-        return orig_CreateServiceA(hSCManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
+    return orig_CreateServiceA(hSCManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
 }
 
 SC_HANDLE WINAPI CreateServiceW_Hook(
@@ -397,7 +403,52 @@ SC_HANDLE WINAPI CreateServiceW_Hook(
     res = MsgBox(buf);
     if (res == IDNO)
         ExitProcess(1);
-        return orig_CreateServiceW(hSCManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
+    return orig_CreateServiceW(hSCManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
+}
+
+INT WINAPI GetLocaleInfoA_Hook(
+    LCID Locale,
+    LCTYPE LCType,
+    LPSTR lpLCData,
+    int cchData
+) {
+    PreHook(1, "GetLocaleInfoA");
+    char buf[300];
+    snprintf(buf, 300, "This executable is trying to get your device's locale infomation.\nContinue execution?");
+    res = MsgBox(buf);
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_GetLocaleInfoA(Locale,LCType,lpLCData,cchData);
+}
+
+INT WINAPI GetLocaleInfoW_Hook(
+    LCID Locale,
+    LCTYPE LCType,
+    LPWSTR lpLCData,
+    int cchData
+) {
+    PreHook(1, "GetLocaleInfoW");
+    char buf[300];
+    snprintf(buf, 300, "This executable is trying to get your device's locale infomation.\nContinue execution?");
+    res = MsgBox(buf);
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_GetLocaleInfoW(Locale,LCType,lpLCData,cchData);
+}
+
+INT WINAPI GetLocaleInfoEx_Hook(
+    LPCWSTR lpLocaleName,
+    LCTYPE LCType,
+    LPWSTR lpLCData,
+    int cchData
+) {
+    PreHook(1, "GetLocaleInfoEx");
+    char buf[300];
+    snprintf(buf, 300, "This executable is trying to get your device's locale infomation.\nContinue execution?");
+    res = MsgBox(buf);
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_GetLocaleInfoEx(lpLocaleName,LCType,lpLCData,cchData);
 }
 
 // 3: フックする全てのWindowsAPIのリスト
@@ -421,7 +472,10 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "MoveFileExW", (void**)&orig_MoveFileExW, (void*)MoveFileExW_Hook),
         HookFunc("advapi32.dll", "CryptDecrypt", (void**)&orig_CryptDecrypt, (void*)CryptDecrypt_Hook),
         HookFunc("advapi32.dll", "CreateServiceA", (void**)&orig_CreateServiceA, (void*)CreateServiceA_Hook),
-        HookFunc("advapi32.dll", "CreateServiceW", (void**)&orig_CreateServiceW, (void*)CreateServiceW_Hook)
+        HookFunc("advapi32.dll", "CreateServiceW", (void**)&orig_CreateServiceW, (void*)CreateServiceW_Hook),
+        HookFunc("kernel32.dll", "GetLocaleInfoA", (void**)&orig_GetLocaleInfoA, (void*)GetLocaleInfoA_Hook),
+        HookFunc("kernel32.dll", "GetLocaleInfoW", (void**)&orig_GetLocaleInfoW, (void*)GetLocaleInfoW_Hook),
+        HookFunc("kernel32.dll", "GetLocaleInfoEx", (void**)&orig_GetLocaleInfoEx, (void*)GetLocaleInfoEx_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================
