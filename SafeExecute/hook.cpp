@@ -104,8 +104,9 @@ bool WINAPI SetFileAttributesW_Hook(
 
 bool WINAPI IsDebuggerPresent_Hook() {
     PreHook(1, "IsDebuggerPresent");
-    // TODO: interactive
-    ExitProcess(1);
+    res = MsgBox("This executable is trying to know whether you are using debugger.\nContinue execution?");
+    if (res == IDNO)
+        ExitProcess(1);
     return orig_IsDebuggerPresent();
 }
 
