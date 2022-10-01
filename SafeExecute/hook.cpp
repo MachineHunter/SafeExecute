@@ -410,7 +410,7 @@ BOOL WINAPI OpenProcessToken_Hook(
     PHANDLE TokenHandle
 ) {
     PreHook(1, "OpenProcessToken");
-    res = MsgBox("OpenProcessToken detected.\nContinue execution?");
+    res = MsgBox("OpenProcessToken detected.\nThis program is trying to detect its process information.\nContinue execution?");
     if (res == IDNO)
         ExitProcess(1);
     return orig_OpenProcessToken(ProcessHandle, DesiredAccess, TokenHandle);
@@ -425,7 +425,7 @@ BOOL AdjustTokenPrivileges_Hook(
     PDWORD            ReturnLength
 ) {
     PreHook(1, "AdjustTokenPrivileges");
-    res = MsgBox("AdjustTokenPrivileges detected.\nContinue execution?");
+    res = MsgBox("AdjustTokenPrivileges detected.\nThis program is trying to change its privieges.\nContinue execution?");
     if (res == IDNO)
         ExitProcess(1);
     return orig_AdjustTokenPrivileges(TokenHandle, DisableAllPrivileges, NewState, BufferLength, PreviousState, ReturnLength);
