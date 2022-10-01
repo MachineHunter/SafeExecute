@@ -1,3 +1,4 @@
+MoveFileA,1
 MoveFileW,1
 MoveFileExA,1
 MoveFileExW,1
@@ -6,6 +7,7 @@ DeleteFileA,1
 WriteFile,1
 inet_pton,1
 InternetOpenUrlA,1
+InternetOpenUrlW,1
 RegCreateKeyExA,1
 RegCreateKeyExW,1
 CreateProcessA,1
@@ -15,3 +17,5 @@ SetFileAttributesA,1
 SetFileAttributesW,1
 CreateServiceA,1
 CreateServiceW,1
+OpenProcessToken,1
+AdjustTokenPrivileges,1
