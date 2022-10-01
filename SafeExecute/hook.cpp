@@ -52,6 +52,8 @@ typedef BOOL(WINAPI* FINDNEXTFILEW)(HANDLE hFindFile, LPWIN32_FIND_DATAW lpFindF
 typedef BOOL(WINAPI* CRYPTDECRYPT)(HCRYPTKEY hKey, HCRYPTHASH hHash, BOOL Final, DWORD dwFlags, BYTE* pbData, DWORD* pdwDataLen);
 typedef SC_HANDLE(WINAPI* CREATESERVICEA)(SC_HANDLE hSCManager, LPCSTR lpServiceName, LPCSTR lpDisplayName, DWORD dwDesiredAccess, DWORD dwServiceType, DWORD dwStartType, DWORD dwErrorControl, LPCSTR lpBinaryPathName, LPCSTR lpLoadOrderGroup, LPDWORD lpdwTagId, LPCSTR lpDependencies, LPCSTR lpServiceStartName, LPCSTR lpPassword);
 typedef SC_HANDLE(WINAPI* CREATESERVICEW)(SC_HANDLE hSCManager, LPCWSTR lpServiceName, LPCWSTR lpDisplayName, DWORD dwDesiredAccess, DWORD dwServiceType, DWORD dwStartType, DWORD dwErrorControl, LPCWSTR lpBinaryPathName, LPCWSTR lpLoadOrderGroup, LPDWORD lpdwTagId, LPCWSTR lpDependencies, LPCWSTR lpServiceStartName, LPCWSTR lpPassword);
+typedef BOOL(WINAPI* OPENPROCESSTOKEN)(HANDLE  ProcessHandle, DWORD   DesiredAccess, PHANDLE TokenHandle);
+typedef BOOL(WINAPI* ADJUSTTOKENPRIVILEGES)(HANDLE TokenHandle, BOOL DisableAllPrivileges, PTOKEN_PRIVILEGES NewState, DWORD BufferLength, PTOKEN_PRIVILEGES PreviousState, PDWORD ReturnLength);
 typedef INT(WINAPI* GETLOCALEINFOA)(LCID Locale, LCTYPE LCType, LPSTR lpLCData, int cchData);
 typedef INT(WINAPI* GETLOCALEINFOW)(LCID Locale, LCTYPE LCType, LPWSTR lpLCData, int cchData);
 typedef INT(WINAPI* GETLOCALEINFOEX)(LPCWSTR lpLocaleName, LCTYPE LCType, LPWSTR lpLCData, int cchData);
@@ -84,6 +86,8 @@ FINDFIRSTFILEW orig_FindFirstFileW;
 FINDNEXTFILEW orig_FindNextFileW;
 CREATESERVICEA orig_CreateServiceA;
 CREATESERVICEW orig_CreateServiceW;
+OPENPROCESSTOKEN orig_OpenProcessToken;
+ADJUSTTOKENPRIVILEGES orig_AdjustTokenPrivileges;
 GETLOCALEINFOA orig_GetLocaleInfoA;
 GETLOCALEINFOW orig_GetLocaleInfoW;
 GETLOCALEINFOEX orig_GetLocaleInfoEx;
@@ -103,7 +107,7 @@ bool WINAPI SetFileAttributesA_Hook(
     // 自分自身を隠しファイル化する挙動の検知
     if ((strcmp(lpFileName, processPath) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
         PreHook(3, "SetFileAttributesA", lpFileName, "FILE_ATTRIBUTE_HIDDEN");
-        res = MsgBox("This executable is trying to make itself a hidden file\nContinue execution?");
+        res = MsgBox("This executable is trying to make itself a hidden file.\nThis behavior is more common in malware than cleaware.\nContinue execution?");
         if (res == IDNO)
             ExitProcess(1);
     }
@@ -121,7 +125,7 @@ bool WINAPI SetFileAttributesW_Hook(
     // 自分自身を隠しファイル化する挙動の検知
     if ((wcscmp(lpFileName, text_wchar) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
         PreHook(3, "SetFileAttributesW", WStringToString(lpFileName).c_str(), "FILE_ATTRIBUTE_HIDDEN");
-        res = MsgBox("This executable is trying to make itself a hidden file\nContinue execution?");
+        res = MsgBox("This executable is trying to make itself a hidden file.\nThis behavior is more common in malware than cleaware.\nContinue execution?");
         if (res == IDNO)
             ExitProcess(1);
     }
@@ -671,13 +675,13 @@ bool WINAPI SystemParametersInfoA_Hook(
     UINT fWinIni
 ) {
     // デスクトップの壁紙変更の検知
-    if ((uiAction & SPI_SETDESKWALLPAPER) != 0) {
+    if (uiAction == SPI_SETDESKWALLPAPER) {
         PreHook(2, "SystemParametersInfoA", "SPI_SETDESKWALLPAPER");
-        res = MsgBox("Changing desktop wall paper Detected\nContinue execution?");
+        res = MsgBox("Changing desktop wall paper Detected.\nRansomware may change your wallpaper to a specific image.\nContinue execution?");
         if (res == IDNO)
             ExitProcess(1);
-        return orig_SystemParametersInfoA(uiAction, uiParam, pvParam, fWinIni);
     }
+    return orig_SystemParametersInfoA(uiAction, uiParam, pvParam, fWinIni);
 }
 
 bool WINAPI SystemParametersInfoW_Hook(
@@ -689,11 +693,58 @@ bool WINAPI SystemParametersInfoW_Hook(
     // デスクトップの壁紙変更の検知
     if ((uiAction & SPI_SETDESKWALLPAPER) != 0) {
         PreHook(2, "SystemParametersInfoW", "SPI_SETDESKWALLPAPER");
-        res = MsgBox("Changing desktop wall paper Detected\nContinue execution?");
+        res = MsgBox("Changing desktop wall paper Detected.\nRansomware may change your wallpaper to a specific image.\nContinue execution?");
         if (res == IDNO)
             ExitProcess(1);
-        return orig_SystemParametersInfoW(uiAction, uiParam, pvParam, fWinIni);
     }
+    return orig_SystemParametersInfoW(uiAction, uiParam, pvParam, fWinIni);
+}
+
+BOOL WINAPI OpenProcessToken_Hook(
+    HANDLE  ProcessHandle,
+    DWORD   DesiredAccess,
+    PHANDLE TokenHandle
+) {
+    PreHook(1, "OpenProcessToken");
+    res = MsgBox("OpenProcessToken detected.\nThis program is trying to detect its process information such as your Windows username, computer name, and the privilege of this process, which is not common. \nContinue execution if you approve this behavior.");
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_OpenProcessToken(ProcessHandle, DesiredAccess, TokenHandle);
+}
+
+BOOL AdjustTokenPrivileges_Hook(
+    HANDLE            TokenHandle,
+    BOOL              DisableAllPrivileges,
+    PTOKEN_PRIVILEGES NewState,
+    DWORD             BufferLength,
+    PTOKEN_PRIVILEGES PreviousState,
+    PDWORD            ReturnLength
+) {
+    PreHook(1, "AdjustTokenPrivileges");
+    DWORD PrivilegeCount = NewState->PrivilegeCount;
+    LUID_AND_ATTRIBUTES* Privileges_arr = NewState->Privileges;
+
+    char privilege_str[300] = {};
+    for (UINT i = 0; i < PrivilegeCount; ++i) {
+        LPSTR pri_name = new char[300];
+        DWORD buf_size = 300;
+        if (!LookupPrivilegeNameA(NULL, &(Privileges_arr[i].Luid), pri_name, &buf_size)) {
+            res = MsgBox("LookupPrivilegesName failed.");
+            char buf[300];
+            snprintf(buf, 300, "LookupPrivilegeNameA\nError Code:%u", GetLastError());
+            res = MsgBox(buf);
+            break;
+        }
+        strncat_s(privilege_str, pri_name, buf_size);
+        strncat_s(privilege_str, "\n", 1);
+        delete[] pri_name;
+    }
+    char buf[500];
+    snprintf(buf, 500, "AdjustTokenPrivileges detected.\nThis program is trying to change its privileges.\nHere are the number of requesting privileges: %d\nHere are the requesting privileges: %s\nContinue execution?\n", PrivilegeCount, privilege_str);
+    res = MsgBox(buf);
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_AdjustTokenPrivileges(TokenHandle, DisableAllPrivileges, NewState, BufferLength, PreviousState, ReturnLength);
 }
 
 // 3: フックする全てのWindowsAPIのリスト
@@ -724,6 +775,8 @@ HookList hooklist = {
         HookFunc("advapi32.dll", "CryptDecrypt", (void**)&orig_CryptDecrypt, (void*)CryptDecrypt_Hook),
         HookFunc("advapi32.dll", "CreateServiceA", (void**)&orig_CreateServiceA, (void*)CreateServiceA_Hook),
         HookFunc("advapi32.dll", "CreateServiceW", (void**)&orig_CreateServiceW, (void*)CreateServiceW_Hook),
+        HookFunc("advapi32.dll", "OpenProcessToken", (void**)&orig_OpenProcessToken, (void*)OpenProcessToken_Hook),
+        HookFunc("advapi32.dll", "AdjustTokenPrivileges", (void**)&orig_AdjustTokenPrivileges, (void*)AdjustTokenPrivileges_Hook),
         HookFunc("kernel32.dll", "GetLocaleInfoA", (void**)&orig_GetLocaleInfoA, (void*)GetLocaleInfoA_Hook),
         HookFunc("kernel32.dll", "GetLocaleInfoW", (void**)&orig_GetLocaleInfoW, (void*)GetLocaleInfoW_Hook),
         HookFunc("kernel32.dll", "GetLocaleInfoEx", (void**)&orig_GetLocaleInfoEx, (void*)GetLocaleInfoEx_Hook),
