@@ -89,7 +89,7 @@ bool WINAPI SetFileAttributesA_Hook(
     // 自分自身を隠しファイル化する挙動の検知
     if ((strcmp(lpFileName, processPath) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
         PreHook(3, "SetFileAttributesA", lpFileName, "FILE_ATTRIBUTE_HIDDEN");
-        res = MsgBox("This executable is trying to make itself a hidden file\nContinue execution?");
+        res = MsgBox("This executable is trying to make itself a hidden file.\nThis behavior is more common in malware than cleaware.\nContinue execution?");
         if (res == IDNO)
             ExitProcess(1);
     }
@@ -107,7 +107,7 @@ bool WINAPI SetFileAttributesW_Hook(
     // 自分自身を隠しファイル化する挙動の検知
     if ((wcscmp(lpFileName, text_wchar) == 0) && ((dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0)) {
         PreHook(3, "SetFileAttributesW", WStringToString(lpFileName).c_str(), "FILE_ATTRIBUTE_HIDDEN");
-        res = MsgBox("This executable is trying to make itself a hidden file\nContinue execution?");
+        res = MsgBox("This executable is trying to make itself a hidden file.\nThis behavior is more common in malware than cleaware.\nContinue execution?");
         if (res == IDNO)
             ExitProcess(1);
     }
@@ -575,13 +575,13 @@ bool WINAPI SystemParametersInfoA_Hook(
     UINT fWinIni
 ) {
     // デスクトップの壁紙変更の検知
-    if ((uiAction & SPI_SETDESKWALLPAPER) != 0) {
+    if (uiAction == SPI_SETDESKWALLPAPER) {
         PreHook(2, "SystemParametersInfoA", "SPI_SETDESKWALLPAPER");
-        res = MsgBox("Changing desktop wall paper Detected\nContinue execution?");
+        res = MsgBox("Changing desktop wall paper Detected.\nRansomware may change your wallpaper to a specific image.\nContinue execution?");
         if (res == IDNO)
             ExitProcess(1);
-        return orig_SystemParametersInfoA(uiAction, uiParam, pvParam, fWinIni);
     }
+    return orig_SystemParametersInfoA(uiAction, uiParam, pvParam, fWinIni);
 }
 
 bool WINAPI SystemParametersInfoW_Hook(
@@ -593,11 +593,11 @@ bool WINAPI SystemParametersInfoW_Hook(
     // デスクトップの壁紙変更の検知
     if ((uiAction & SPI_SETDESKWALLPAPER) != 0) {
         PreHook(2, "SystemParametersInfoW", "SPI_SETDESKWALLPAPER");
-        res = MsgBox("Changing desktop wall paper Detected\nContinue execution?");
+        res = MsgBox("Changing desktop wall paper Detected.\nRansomware may change your wallpaper to a specific image.\nContinue execution?");
         if (res == IDNO)
             ExitProcess(1);
-        return orig_SystemParametersInfoW(uiAction, uiParam, pvParam, fWinIni);
     }
+    return orig_SystemParametersInfoW(uiAction, uiParam, pvParam, fWinIni);
 }
 
 BOOL WINAPI OpenProcessToken_Hook(
