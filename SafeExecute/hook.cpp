@@ -23,11 +23,21 @@ typedef BOOL(WINAPI* MOVEFILEA)(LPCSTR lpExistingFileName, LPCSTR lpNewFileName)
 typedef BOOL(WINAPI* MOVEFILEW)(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName);
 typedef BOOL(WINAPI* MOVEFILEEXA)(LPCSTR lpExistingFileName, LPCSTR lpNewFileName, DWORD  dwFlags);
 typedef BOOL(WINAPI* MOVEFILEEXW)(LPCWSTR lpExistingFileName, LPCWSTR lpNewFileName, DWORD  dwFlags);
+typedef HANDLE(WINAPI* FINDFIRSTFILEA)(LPCSTR lpFileName, LPWIN32_FIND_DATAA lpFindFileData);
+typedef BOOL(WINAPI* FINDNEXTFILEA)(HANDLE hFindFile, LPWIN32_FIND_DATAA lpFindFileData);
+typedef HANDLE(WINAPI* FINDFIRSTFILEW)(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData);
+typedef BOOL(WINAPI* FINDNEXTFILEW)(HANDLE hFindFile, LPWIN32_FIND_DATAW lpFindFileData);
 typedef BOOL(WINAPI* CRYPTDECRYPT)(HCRYPTKEY hKey, HCRYPTHASH hHash, BOOL Final, DWORD dwFlags, BYTE* pbData, DWORD* pdwDataLen);
 typedef SC_HANDLE(WINAPI* CREATESERVICEA)(SC_HANDLE hSCManager, LPCSTR lpServiceName, LPCSTR lpDisplayName, DWORD dwDesiredAccess, DWORD dwServiceType, DWORD dwStartType, DWORD dwErrorControl, LPCSTR lpBinaryPathName, LPCSTR lpLoadOrderGroup, LPDWORD lpdwTagId, LPCSTR lpDependencies, LPCSTR lpServiceStartName, LPCSTR lpPassword);
 typedef SC_HANDLE(WINAPI* CREATESERVICEW)(SC_HANDLE hSCManager, LPCWSTR lpServiceName, LPCWSTR lpDisplayName, DWORD dwDesiredAccess, DWORD dwServiceType, DWORD dwStartType, DWORD dwErrorControl, LPCWSTR lpBinaryPathName, LPCWSTR lpLoadOrderGroup, LPDWORD lpdwTagId, LPCWSTR lpDependencies, LPCWSTR lpServiceStartName, LPCWSTR lpPassword);
 typedef BOOL(WINAPI* OPENPROCESSTOKEN)(HANDLE  ProcessHandle, DWORD   DesiredAccess, PHANDLE TokenHandle);
 typedef BOOL(WINAPI* ADJUSTTOKENPRIVILEGES)(HANDLE TokenHandle, BOOL DisableAllPrivileges, PTOKEN_PRIVILEGES NewState, DWORD BufferLength, PTOKEN_PRIVILEGES PreviousState, PDWORD ReturnLength);
+typedef INT(WINAPI* GETLOCALEINFOA)(LCID Locale, LCTYPE LCType, LPSTR lpLCData, int cchData);
+typedef INT(WINAPI* GETLOCALEINFOW)(LCID Locale, LCTYPE LCType, LPWSTR lpLCData, int cchData);
+typedef INT(WINAPI* GETLOCALEINFOEX)(LPCWSTR lpLocaleName, LCTYPE LCType, LPWSTR lpLCData, int cchData);
+typedef BOOL(WINAPI* CREATETIMERQUEUETIMER)(PHANDLE phNewTimer, HANDLE TimerQueue, WAITORTIMERCALLBACK Callback, PVOID Parameter, DWORD DueTime, DWORD Period, ULONG Flags);
+typedef BOOL(WINAPI* SYSTEMPARAMETERSINFOA)(UINT uiAction, UINT uiParam, PVOID pvParam, UINT fWinIni);
+typedef BOOL(WINAPI* SYSTEMPARAMETERSINFOW)(UINT uiAction, UINT uiParam, PVOID pvParam, UINT fWinIni);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 SETFILEATTRIBUTESW orig_SetFileAttributesW;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
@@ -45,11 +55,22 @@ MOVEFILEA orig_MoveFileA;
 MOVEFILEW orig_MoveFileW;
 MOVEFILEEXA orig_MoveFileExA;
 MOVEFILEEXW orig_MoveFileExW;
+FINDFIRSTFILEA orig_FindFirstFileA;
+FINDNEXTFILEA orig_FindNextFileA;
 CRYPTDECRYPT orig_CryptDecrypt;
+FINDFIRSTFILEW orig_FindFirstFileW;
+FINDNEXTFILEW orig_FindNextFileW;
 CREATESERVICEA orig_CreateServiceA;
 CREATESERVICEW orig_CreateServiceW;
 OPENPROCESSTOKEN orig_OpenProcessToken;
 ADJUSTTOKENPRIVILEGES orig_AdjustTokenPrivileges;
+GETLOCALEINFOA orig_GetLocaleInfoA;
+GETLOCALEINFOW orig_GetLocaleInfoW;
+GETLOCALEINFOEX orig_GetLocaleInfoEx;
+CREATETIMERQUEUETIMER orig_CreateTimerQueueTimer;
+SYSTEMPARAMETERSINFOA orig_SystemParametersInfoA;
+SYSTEMPARAMETERSINFOW orig_SystemParametersInfoW;
+
 
 std::string WStringToString(const std::wstring& ws)
 {
@@ -95,8 +116,9 @@ bool WINAPI SetFileAttributesW_Hook(
 
 bool WINAPI IsDebuggerPresent_Hook() {
     PreHook(1, "IsDebuggerPresent");
-    // TODO: interactive
-    ExitProcess(1);
+    res = MsgBox("This executable is trying to know whether you are using debugger.\nThis function is often used in malware to avoid being analyzed.\nContinue execution?");
+    if (res == IDNO)
+        ExitProcess(1);
     return orig_IsDebuggerPresent();
 }
 
@@ -341,6 +363,84 @@ bool WINAPI MoveFileExW_Hook(
     return orig_MoveFileExW(lpExistingFileName, lpNewFileName, dwFlags);
 }
 
+HANDLE WINAPI FindFirstFileA_Hook(
+    LPCSTR lpFileName,
+    LPWIN32_FIND_DATAA lpFindFileData
+) {
+    PreHook(2, "FindFirstFileA", lpFileName);
+
+    char buf_msg[500];
+    sprintf_s(buf_msg, "File iteration started.\nThis executable is trying to iterate through file from '%s'.\nFile iteration can be used in normal executables but is also used in ransomeware to look for files to encrypt.\nContinue execution? ", lpFileName);
+    res = MsgBox(buf_msg);
+
+    if (res == IDNO)
+        ExitProcess(1);
+
+    return orig_FindFirstFileA(lpFileName, lpFindFileData);;
+}
+
+BOOL skipFileIterA = false;
+BOOL WINAPI FindNextFileA_Hook(
+    HANDLE hFindFile,
+    LPWIN32_FIND_DATAA lpFindFileData
+) {
+    char prevFileName[MAX_PATH];
+    strcpy_s(prevFileName, lpFindFileData->cFileName);
+    BOOL ret = orig_FindNextFileA(hFindFile, lpFindFileData);
+    
+    if (!skipFileIterA && strcmp(lpFindFileData->cFileName, ".") && strcmp(lpFindFileData->cFileName, "..")) {
+        PreHook(2, "FindNextFileA", lpFindFileData->cFileName);
+
+        char buf_msg[500];
+        sprintf_s(buf_msg, "File iteration currently at '%s'.\nFile iteration is also used in ransomeware to look for files to encrypt.\nPrevious iterated file is '%s'.\nIf this file is encrypted, then this executable maybe a ransomware.\nContinue execution?\n\nPress 'Cancel' to skip file iteration detection.", lpFindFileData->cFileName, prevFileName);
+        res = MessageBoxA(NULL, buf_msg, "SafeExecute", MB_YESNOCANCEL);
+        if (res == IDNO)
+            ExitProcess(1);
+        else if (res == IDCANCEL)
+            skipFileIterA = true;
+    }
+    return ret;
+}
+
+HANDLE WINAPI FindFirstFileW_Hook(
+    LPCWSTR lpFileName,
+    LPWIN32_FIND_DATAW lpFindFileData
+) {
+    PreHook(2, "FindFirstFileW", WStringToString(lpFileName).c_str());
+
+    char buf_msg[500];
+    sprintf_s(buf_msg, "File iteration started.\nThis executable is trying to iterate through file from '%S'.\nFile iteration can be used in normal executables but is also used in ransomeware to look for files to encrypt.\nContinue execution? ", lpFileName);
+    res = MsgBox(buf_msg);
+
+    if (res == IDNO)
+        ExitProcess(1);
+
+    return orig_FindFirstFileW(lpFileName, lpFindFileData);;
+}
+
+BOOL skipFileIterW = false;
+BOOL WINAPI FindNextFileW_Hook(
+    HANDLE hFindFile,
+    LPWIN32_FIND_DATAW lpFindFileData
+) {
+    char prevFileName[MAX_PATH];
+    strcpy_s(prevFileName, WStringToString(lpFindFileData->cFileName).c_str());
+    BOOL ret = orig_FindNextFileW(hFindFile, lpFindFileData);
+    
+    if (!skipFileIterW && wcscmp(lpFindFileData->cFileName, L".") && wcscmp(lpFindFileData->cFileName, L"..")) {
+        PreHook(2, "FindNextFileW", WStringToString(lpFindFileData->cFileName).c_str());
+
+        char buf_msg[500];
+        sprintf_s(buf_msg, "File iteration currently at '%S'.\nFile iteration is also used in ransomeware to look for files to encrypt.\nPrevious iterated file is '%s'.\nIf this file is encrypted, then this executable maybe a ransomware.\nContinue execution?\n\nPress 'Cancel' to skip file iteration detection.", lpFindFileData->cFileName, prevFileName);
+        res = MessageBoxA(NULL, buf_msg, "SafeExecute", MB_YESNOCANCEL);
+        if (res == IDNO)
+            ExitProcess(1);
+        else if (res == IDCANCEL)
+            skipFileIterW = true;
+    }
+    return ret;
+}
+
 BOOL WINAPI CryptDecrypt_Hook(
     HCRYPTKEY hKey,
     HCRYPTHASH hHash,
@@ -377,7 +477,7 @@ SC_HANDLE WINAPI CreateServiceA_Hook(
     res = MsgBox(buf);
     if (res == IDNO)
         ExitProcess(1);
-        return orig_CreateServiceA(hSCManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
+    return orig_CreateServiceA(hSCManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
 }
 
 SC_HANDLE WINAPI CreateServiceW_Hook(
@@ -401,7 +501,103 @@ SC_HANDLE WINAPI CreateServiceW_Hook(
     res = MsgBox(buf);
     if (res == IDNO)
         ExitProcess(1);
-        return orig_CreateServiceW(hSCManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
+    return orig_CreateServiceW(hSCManager, lpServiceName, lpDisplayName, dwDesiredAccess, dwServiceType, dwStartType, dwErrorControl, lpBinaryPathName, lpLoadOrderGroup, lpdwTagId, lpDependencies, lpServiceStartName, lpPassword);
+}
+
+INT WINAPI GetLocaleInfoA_Hook(
+    LCID Locale,
+    LCTYPE LCType,
+    LPSTR lpLCData,
+    int cchData
+) {
+    PreHook(1, "GetLocaleInfoA");
+    char buf[300];
+    snprintf(buf, 300, "This executable is trying to get your device's locale infomation.\nContinue execution?");
+    res = MsgBox(buf);
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_GetLocaleInfoA(Locale,LCType,lpLCData,cchData);
+}
+
+INT WINAPI GetLocaleInfoW_Hook(
+    LCID Locale,
+    LCTYPE LCType,
+    LPWSTR lpLCData,
+    int cchData
+) {
+    PreHook(1, "GetLocaleInfoW");
+    char buf[300];
+    snprintf(buf, 300, "This executable is trying to get your device's locale infomation.\nContinue execution?");
+    res = MsgBox(buf);
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_GetLocaleInfoW(Locale,LCType,lpLCData,cchData);
+}
+
+INT WINAPI GetLocaleInfoEx_Hook(
+    LPCWSTR lpLocaleName,
+    LCTYPE LCType,
+    LPWSTR lpLCData,
+    int cchData
+) {
+    PreHook(1, "GetLocaleInfoEx");
+    char buf[300];
+    snprintf(buf, 300, "This executable is trying to get your device's locale infomation.\nContinue execution?");
+    res = MsgBox(buf);
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_GetLocaleInfoEx(lpLocaleName,LCType,lpLCData,cchData);
+}
+
+bool WINAPI CreateTimerQueueTimer_Hook(
+    PHANDLE             phNewTimer,
+    HANDLE              TimerQueue,
+    WAITORTIMERCALLBACK Callback,
+    PVOID               Parameter,
+    DWORD               DueTime,
+    DWORD               Period,
+    ULONG               Flags
+) {
+    PreHook(1, "CreateTimerQueueTimer");
+    
+    // CreateTimerQueueTimer
+    res = MsgBox("Timer creation detected\nContinue execution?");
+    if (res == IDNO) 
+        ExitProcess(1);
+    
+    return orig_CreateTimerQueueTimer(phNewTimer, TimerQueue, Callback, Parameter, DueTime, Period, Flags);
+}
+
+bool WINAPI SystemParametersInfoA_Hook(
+    UINT uiAction,
+    UINT uiParam,
+    PVOID pvParam,
+    UINT fWinIni
+) {
+    // デスクトップの壁紙変更の検知
+    if ((uiAction & SPI_SETDESKWALLPAPER) != 0) {
+        PreHook(2, "SystemParametersInfoA", "SPI_SETDESKWALLPAPER");
+        res = MsgBox("Changing desktop wall paper Detected\nContinue execution?");
+        if (res == IDNO)
+            ExitProcess(1);
+        return orig_SystemParametersInfoA(uiAction, uiParam, pvParam, fWinIni);
+    }
+}
+
+bool WINAPI SystemParametersInfoW_Hook(
+    UINT uiAction,
+    UINT uiParam,
+    PVOID pvParam,
+    UINT fWinIni
+) {
+    // デスクトップの壁紙変更の検知
+    if ((uiAction & SPI_SETDESKWALLPAPER) != 0) {
+        PreHook(2, "SystemParametersInfoW", "SPI_SETDESKWALLPAPER");
+        res = MsgBox("Changing desktop wall paper Detected\nContinue execution?");
+        if (res == IDNO)
+            ExitProcess(1);
+        return orig_SystemParametersInfoW(uiAction, uiParam, pvParam, fWinIni);
+    }
 }
 
 BOOL WINAPI OpenProcessToken_Hook(
@@ -470,11 +666,21 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "MoveFileW", (void**)&orig_MoveFileW, (void*)MoveFileW_Hook),
         HookFunc("kernel32.dll", "MoveFileExA", (void**)&orig_MoveFileExA, (void*)MoveFileExA_Hook),
         HookFunc("kernel32.dll", "MoveFileExW", (void**)&orig_MoveFileExW, (void*)MoveFileExW_Hook),
+        HookFunc("kernel32.dll", "FindFirstFileA", (void**)&orig_FindFirstFileA, (void*)FindFirstFileA_Hook),
+        HookFunc("kernel32.dll", "FindNextFileA", (void**)&orig_FindNextFileA, (void*)FindNextFileA_Hook),
+        HookFunc("kernel32.dll", "FindFirstFileW", (void**)&orig_FindFirstFileW, (void*)FindFirstFileW_Hook),
+        HookFunc("kernel32.dll", "FindNextFileW", (void**)&orig_FindNextFileW, (void*)FindNextFileW_Hook),
         HookFunc("advapi32.dll", "CryptDecrypt", (void**)&orig_CryptDecrypt, (void*)CryptDecrypt_Hook),
         HookFunc("advapi32.dll", "CreateServiceA", (void**)&orig_CreateServiceA, (void*)CreateServiceA_Hook),
         HookFunc("advapi32.dll", "CreateServiceW", (void**)&orig_CreateServiceW, (void*)CreateServiceW_Hook),
         HookFunc("advapi32.dll", "OpenProcessToken", (void**)&orig_OpenProcessToken, (void*)OpenProcessToken_Hook),
-        HookFunc("advapi32.dll", "AdjustTokenPrivileges", (void**)&orig_AdjustTokenPrivileges, (void*)AdjustTokenPrivileges_Hook)
+        HookFunc("advapi32.dll", "AdjustTokenPrivileges", (void**)&orig_AdjustTokenPrivileges, (void*)AdjustTokenPrivileges_Hook),
+        HookFunc("kernel32.dll", "GetLocaleInfoA", (void**)&orig_GetLocaleInfoA, (void*)GetLocaleInfoA_Hook),
+        HookFunc("kernel32.dll", "GetLocaleInfoW", (void**)&orig_GetLocaleInfoW, (void*)GetLocaleInfoW_Hook),
+        HookFunc("kernel32.dll", "GetLocaleInfoEx", (void**)&orig_GetLocaleInfoEx, (void*)GetLocaleInfoEx_Hook),
+        HookFunc("kernel32.dll", "CreateTimerQueueTimer", (void**)&orig_CreateTimerQueueTimer, (void*)CreateTimerQueueTimer_Hook),
+        HookFunc("user32.dll", "SystemParametersInfoA", (void**)&orig_SystemParametersInfoA, (void*)SystemParametersInfoA_Hook),
+        HookFunc("user32.dll", "SystemParametersInfoW", (void**)&orig_SystemParametersInfoW, (void*)SystemParametersInfoW_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================

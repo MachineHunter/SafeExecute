@@ -4,6 +4,10 @@ MoveFileExA,1
 MoveFileExW,1
 DeleteFileW,1
 DeleteFileA,1
+FindFirstFileA,1
+FindNextFileA,1
+FindFirstFileW,1
+FindNextFileW,1
 WriteFile,1
 inet_pton,1
 InternetOpenUrlA,1
@@ -19,3 +23,7 @@ CreateServiceA,1
 CreateServiceW,1
 OpenProcessToken,1
 AdjustTokenPrivileges,1
+GetLocaleInfoA,1
+GetLocaleInfoW,1
+SystemParametersInfoA, 1
+SystemParametersInfoW, 1
