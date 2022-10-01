@@ -3,6 +3,26 @@
 
 int res;
 
+std::string WStringToString(const std::wstring& ws) {
+    std::string s(ws.length(), ' ');
+    std::copy(ws.begin(), ws.end(), s.begin());
+    return s;
+}
+
+std::string PathToFileName(char* path) {
+    string strFilePath(path);
+    string strFileName;
+    size_t off = strFilePath.find_last_of("/\\");
+    if (off != string::npos)
+        strFileName = strFilePath.substr(off + 1);
+    else
+        strFileName = strFilePath;
+
+    return strFileName;
+}
+
+
+
 // ================================== フックを追加する場合は、ここから =====================================================
 
 // 1: WindowsAPIの関数型の定義
@@ -16,6 +36,7 @@ typedef HINTERNET (WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl
 typedef HINTERNET(WINAPI* INTERNETOPENURLW)(HINTERNET hInternet, LPCWSTR lpszUrl, LPCWSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXA)(HKEY hKey, LPCSTR lpSubKey, DWORD Reserved, LPSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
 typedef LSTATUS(WINAPI* REGCREATEKEYEXW)(HKEY hKey, LPCWSTR lpSubKey, DWORD Reserved, LPWSTR lpClass, DWORD dwOptions, REGSAM samDesired, const LPSECURITY_ATTRIBUTES lpSecurityAttributes, PHKEY phkResult, LPDWORD lpdwDisposition);
+typedef HANDLE(WINAPI* CREATEFILEA)(LPCSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
 typedef BOOL(WINAPI* WRITEFILE)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, LPOVERLAPPED lpOverlapped);
 typedef BOOL(WINAPI* DELETEFILEW)(LPCWSTR lpFileName);
 typedef BOOL(WINAPI* DELETEFILEA)(LPCSTR lpFileName);
@@ -46,6 +67,7 @@ INTERNETOPENURLA orig_InternetOpenUrlA;
 INTERNETOPENURLW orig_InternetOpenUrlW;
 REGCREATEKEYEXA orig_RegCreateKeyExA;
 REGCREATEKEYEXW orig_RegCreateKeyExW;
+CREATEFILEA orig_CreateFileA;
 WRITEFILE orig_WriteFile;
 DELETEFILEW orig_DeleteFileW;
 DELETEFILEA orig_DeleteFileA;
@@ -68,12 +90,6 @@ SYSTEMPARAMETERSINFOA orig_SystemParametersInfoA;
 SYSTEMPARAMETERSINFOW orig_SystemParametersInfoW;
 
 
-std::string WStringToString(const std::wstring& ws)
-{
-    std::string s(ws.length(), ' ');
-    std::copy(ws.begin(), ws.end(), s.begin());
-    return s;
-}
 
 // 2: フック関数の用意（ココに悪性処理検出のロジックを書く）
 // （※ PreHook() を必ず呼んで欲しいです...!）
@@ -264,6 +280,47 @@ LSTATUS WINAPI RegCreateKeyExW_Hook(
             ExitProcess(1);
     }
     return orig_RegCreateKeyExW(hkey, lpSubKey, Reserved, lpClass, dwOptions, samDesired, lpSecurityAttributes, phkResult, lpdwDisposition);
+}
+
+HANDLE WINAPI CreateFileA_Hook(
+    LPCSTR lpFileName,
+    DWORD dwDesiredAccess,
+    DWORD dwShareMode,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    DWORD dwCreationDisposition,
+    DWORD dwFlagsAndAttributes,
+    HANDLE hTemplateFile
+) {
+    if (dwCreationDisposition == OPEN_ALWAYS || dwCreationDisposition == OPEN_EXISTING) {
+        string strFileName;
+        strFileName = PathToFileName((LPSTR)lpFileName);
+
+        char path[MAX_PATH];
+        GetCurrentDirectoryA(MAX_PATH, path);
+        strcat_s(path, "\\backups\\");
+
+        if (PathFileExistsA(path)) {
+            char buf[50];
+            memset(buf, 0, 50);
+        
+            string strProcPath;
+            strProcPath = PathToFileName(processPath);
+
+            strcat_s(path, strProcPath.c_str());
+
+            CreateDirectoryA(path, NULL);
+        
+            strcat_s(path, "\\");
+            strcat_s(path, strFileName.c_str());
+            CopyFileA(lpFileName, path, FALSE);
+        }
+        else {
+            MessageBoxA(NULL, "Please execute SafeExecutor from project home directory or backups/ folder is missing", "File Backup Error", MB_OK | MB_ICONERROR);
+            ExitProcess(1);
+        }
+    }
+    
+    return orig_CreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 }
 
 bool WINAPI WriteFile_Hook(
@@ -608,6 +665,7 @@ HookList hooklist = {
         HookFunc("WinInet.dll", "InternetOpenUrlW", (void**)&orig_InternetOpenUrlW, (void*)InternetOpenUrlW_Hook),
         HookFunc("advapi32.dll", "RegCreateKeyExA", (void**)&orig_RegCreateKeyExA, (void*)RegCreateKeyExA_Hook),
         HookFunc("advapi32.dll", "RegCreateKeyExW", (void**)&orig_RegCreateKeyExW, (void*)RegCreateKeyExW_Hook),
+        HookFunc("kernel32.dll", "CreateFileA", (void**)&orig_CreateFileA, (void*)CreateFileA_Hook),
         HookFunc("kernel32.dll", "WriteFile", (void**)&orig_WriteFile, (void*)WriteFile_Hook),
         HookFunc("kernel32.dll", "DeleteFileW", (void**)&orig_DeleteFileW, (void*)DeleteFileW_Hook),
         HookFunc("kernel32.dll", "DeleteFileA", (void**)&orig_DeleteFileA, (void*)DeleteFileA_Hook),

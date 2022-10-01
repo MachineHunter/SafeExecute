@@ -51,3 +51,4 @@ extern HookList hooklist;
 void Hook();
 
 std::string WStringToString(const std::wstring& s);
+std::string PathToFileName(char* path);

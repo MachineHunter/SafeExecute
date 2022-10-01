@@ -46,10 +46,11 @@ int main(int argc, char *argv[]) {
 					DWORD writesize;
 					char buf[] = "\nencrypted\n";
 					hFile = CreateFileA(filepath, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-					SetFilePointer(hFile, 0, NULL, FILE_END);
-					WriteFile(hFile, buf, strlen(buf), &writesize, NULL);
-
-					cout << filepath << " encrypted" << endl;
+					if(hFile!=INVALID_HANDLE_VALUE) {
+						SetFilePointer(hFile, 0, NULL, FILE_END);
+						WriteFile(hFile, buf, strlen(buf), &writesize, NULL);
+						cout << filepath << " encrypted" << endl;
+					}
 				}
 			}
 		}
