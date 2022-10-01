@@ -1,3 +1,5 @@
+CreateFileA,1
+CreateFileW,1
 MoveFileW,1
 MoveFileExA,1
 MoveFileExW,1
