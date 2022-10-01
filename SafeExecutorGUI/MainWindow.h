@@ -108,6 +108,10 @@ namespace SafeExecutorGUI {
 	private: System::Windows::Forms::TabPage^ stdoutPage;
 	private: System::Windows::Forms::TabPage^ stderrPage;
 	private: System::Windows::Forms::RichTextBox^ OutputErrBox;
+	private: System::Windows::Forms::TextBox^ checkboxZoneTitle;
+	private: System::Windows::Forms::PictureBox^ pictureBox1;
+
+
 
 
 	private:
@@ -123,11 +127,14 @@ namespace SafeExecutorGUI {
 		/// </summary>
 		void InitializeComponent(void)
 		{
+			System::ComponentModel::ComponentResourceManager^ resources = (gcnew System::ComponentModel::ComponentResourceManager(MainWindow::typeid));
 			this->target_exe_selection_panel = (gcnew System::Windows::Forms::Panel());
 			this->ExecBtn = (gcnew System::Windows::Forms::Button());
 			this->FileSelectBtn = (gcnew System::Windows::Forms::Button());
 			this->FileSelectTextBox = (gcnew System::Windows::Forms::TextBox());
 			this->checklist_panel = (gcnew System::Windows::Forms::Panel());
+			this->pictureBox1 = (gcnew System::Windows::Forms::PictureBox());
+			this->checkboxZoneTitle = (gcnew System::Windows::Forms::TextBox());
 			this->treeView = (gcnew System::Windows::Forms::TreeView());
 			this->output_panel = (gcnew System::Windows::Forms::Panel());
 			this->OutputTabControl = (gcnew System::Windows::Forms::TabControl());
@@ -137,6 +144,7 @@ namespace SafeExecutorGUI {
 			this->OutputErrBox = (gcnew System::Windows::Forms::RichTextBox());
 			this->target_exe_selection_panel->SuspendLayout();
 			this->checklist_panel->SuspendLayout();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox1))->BeginInit();
 			this->output_panel->SuspendLayout();
 			this->OutputTabControl->SuspendLayout();
 			this->stdoutPage->SuspendLayout();
@@ -152,19 +160,20 @@ namespace SafeExecutorGUI {
 			this->target_exe_selection_panel->Controls->Add(this->FileSelectTextBox);
 			this->target_exe_selection_panel->Dock = System::Windows::Forms::DockStyle::Top;
 			this->target_exe_selection_panel->Location = System::Drawing::Point(0, 0);
-			this->target_exe_selection_panel->Margin = System::Windows::Forms::Padding(4);
 			this->target_exe_selection_panel->Name = L"target_exe_selection_panel";
-			this->target_exe_selection_panel->Size = System::Drawing::Size(1148, 208);
+			this->target_exe_selection_panel->Size = System::Drawing::Size(861, 83);
 			this->target_exe_selection_panel->TabIndex = 0;
 			this->target_exe_selection_panel->DragDrop += gcnew System::Windows::Forms::DragEventHandler(this, &MainWindow::target_exe_selection_panel_DragDrop);
 			this->target_exe_selection_panel->DragEnter += gcnew System::Windows::Forms::DragEventHandler(this, &MainWindow::target_exe_selection_panel_DragEnter);
 			// 
 			// ExecBtn
 			// 
-			this->ExecBtn->Location = System::Drawing::Point(877, 81);
-			this->ExecBtn->Margin = System::Windows::Forms::Padding(3, 2, 3, 2);
+			this->ExecBtn->Font = (gcnew System::Drawing::Font(L"メイリオ", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(128)));
+			this->ExecBtn->Location = System::Drawing::Point(742, 21);
+			this->ExecBtn->Margin = System::Windows::Forms::Padding(2);
 			this->ExecBtn->Name = L"ExecBtn";
-			this->ExecBtn->Size = System::Drawing::Size(75, 31);
+			this->ExecBtn->Size = System::Drawing::Size(80, 42);
 			this->ExecBtn->TabIndex = 2;
 			this->ExecBtn->Text = L"実行";
 			this->ExecBtn->UseVisualStyleBackColor = true;
@@ -172,10 +181,12 @@ namespace SafeExecutorGUI {
 			// 
 			// FileSelectBtn
 			// 
-			this->FileSelectBtn->Location = System::Drawing::Point(780, 81);
-			this->FileSelectBtn->Margin = System::Windows::Forms::Padding(3, 2, 3, 2);
+			this->FileSelectBtn->Font = (gcnew System::Drawing::Font(L"メイリオ", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(128)));
+			this->FileSelectBtn->Location = System::Drawing::Point(640, 21);
+			this->FileSelectBtn->Margin = System::Windows::Forms::Padding(2);
 			this->FileSelectBtn->Name = L"FileSelectBtn";
-			this->FileSelectBtn->Size = System::Drawing::Size(75, 31);
+			this->FileSelectBtn->Size = System::Drawing::Size(80, 42);
 			this->FileSelectBtn->TabIndex = 1;
 			this->FileSelectBtn->Text = L"参照";
 			this->FileSelectBtn->UseVisualStyleBackColor = true;
@@ -184,35 +195,66 @@ namespace SafeExecutorGUI {
 			// FileSelectTextBox
 			// 
 			this->FileSelectTextBox->BackColor = System::Drawing::Color::White;
-			this->FileSelectTextBox->Font = (gcnew System::Drawing::Font(L"MS UI Gothic", 10.2F, System::Drawing::FontStyle::Bold));
-			this->FileSelectTextBox->Location = System::Drawing::Point(72, 84);
-			this->FileSelectTextBox->Margin = System::Windows::Forms::Padding(3, 2, 3, 2);
+			this->FileSelectTextBox->Font = (gcnew System::Drawing::Font(L"MS UI Gothic", 11.25F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(128)));
+			this->FileSelectTextBox->ForeColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(64)),
+				static_cast<System::Int32>(static_cast<System::Byte>(64)), static_cast<System::Int32>(static_cast<System::Byte>(64)));
+			this->FileSelectTextBox->Location = System::Drawing::Point(47, 31);
 			this->FileSelectTextBox->Name = L"FileSelectTextBox";
-			this->FileSelectTextBox->Size = System::Drawing::Size(688, 24);
+			this->FileSelectTextBox->Size = System::Drawing::Size(566, 22);
 			this->FileSelectTextBox->TabIndex = 0;
 			// 
 			// checklist_panel
 			// 
-			this->checklist_panel->BackColor = System::Drawing::SystemColors::ActiveBorder;
+			this->checklist_panel->BackColor = System::Drawing::SystemColors::Window;
+			this->checklist_panel->Controls->Add(this->pictureBox1);
+			this->checklist_panel->Controls->Add(this->checkboxZoneTitle);
 			this->checklist_panel->Controls->Add(this->treeView);
 			this->checklist_panel->Dock = System::Windows::Forms::DockStyle::Fill;
-			this->checklist_panel->Location = System::Drawing::Point(0, 208);
-			this->checklist_panel->Margin = System::Windows::Forms::Padding(4);
+			this->checklist_panel->Location = System::Drawing::Point(0, 83);
 			this->checklist_panel->Name = L"checklist_panel";
-			this->checklist_panel->Size = System::Drawing::Size(1148, 540);
+			this->checklist_panel->Size = System::Drawing::Size(861, 515);
 			this->checklist_panel->TabIndex = 1;
+			// 
+			// pictureBox1
+			// 
+			this->pictureBox1->Image = (cli::safe_cast<System::Drawing::Image^>(resources->GetObject(L"pictureBox1.Image")));
+			this->pictureBox1->Location = System::Drawing::Point(267, 108);
+			this->pictureBox1->Name = L"pictureBox1";
+			this->pictureBox1->Size = System::Drawing::Size(197, 360);
+			this->pictureBox1->TabIndex = 2;
+			this->pictureBox1->TabStop = false;
+			this->pictureBox1->Click += gcnew System::EventHandler(this, &MainWindow::pictureBox1_Click);
+			// 
+			// checkboxZoneTitle
+			// 
+			this->checkboxZoneTitle->BackColor = System::Drawing::SystemColors::GradientActiveCaption;
+			this->checkboxZoneTitle->BorderStyle = System::Windows::Forms::BorderStyle::None;
+			this->checkboxZoneTitle->Font = (gcnew System::Drawing::Font(L"メイリオ", 15.75F, System::Drawing::FontStyle::Bold, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(128)));
+			this->checkboxZoneTitle->ForeColor = System::Drawing::Color::FromArgb(static_cast<System::Int32>(static_cast<System::Byte>(64)),
+				static_cast<System::Int32>(static_cast<System::Byte>(64)), static_cast<System::Int32>(static_cast<System::Byte>(64)));
+			this->checkboxZoneTitle->Location = System::Drawing::Point(22, 24);
+			this->checkboxZoneTitle->Name = L"checkboxZoneTitle";
+			this->checkboxZoneTitle->Size = System::Drawing::Size(259, 32);
+			this->checkboxZoneTitle->TabIndex = 1;
+			this->checkboxZoneTitle->Text = L"[実行に制限をかける項目]";
+			this->checkboxZoneTitle->TextAlign = System::Windows::Forms::HorizontalAlignment::Center;
+			this->checkboxZoneTitle->TextChanged += gcnew System::EventHandler(this, &MainWindow::textBox1_TextChanged);
 			// 
 			// treeView
 			// 
 			this->treeView->Anchor = static_cast<System::Windows::Forms::AnchorStyles>((((System::Windows::Forms::AnchorStyles::Top | System::Windows::Forms::AnchorStyles::Bottom)
 				| System::Windows::Forms::AnchorStyles::Left)
 				| System::Windows::Forms::AnchorStyles::Right));
+			this->treeView->BorderStyle = System::Windows::Forms::BorderStyle::None;
 			this->treeView->CheckBoxes = true;
-			this->treeView->Font = (gcnew System::Drawing::Font(L"MS UI Gothic", 12));
-			this->treeView->Location = System::Drawing::Point(28, 19);
-			this->treeView->Margin = System::Windows::Forms::Padding(4);
+			this->treeView->Font = (gcnew System::Drawing::Font(L"メイリオ", 12.75F, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(128)));
+			this->treeView->LineColor = System::Drawing::Color::White;
+			this->treeView->Location = System::Drawing::Point(22, 86);
 			this->treeView->Name = L"treeView";
-			this->treeView->Size = System::Drawing::Size(591, 505);
+			this->treeView->Size = System::Drawing::Size(442, 417);
 			this->treeView->TabIndex = 0;
 			this->treeView->AfterCheck += gcnew System::Windows::Forms::TreeViewEventHandler(this, &MainWindow::treeView_AfterCheck);
 			// 
@@ -221,10 +263,9 @@ namespace SafeExecutorGUI {
 			this->output_panel->BackColor = System::Drawing::Color::White;
 			this->output_panel->Controls->Add(this->OutputTabControl);
 			this->output_panel->Dock = System::Windows::Forms::DockStyle::Right;
-			this->output_panel->Location = System::Drawing::Point(643, 208);
-			this->output_panel->Margin = System::Windows::Forms::Padding(4);
+			this->output_panel->Location = System::Drawing::Point(482, 83);
 			this->output_panel->Name = L"output_panel";
-			this->output_panel->Size = System::Drawing::Size(505, 540);
+			this->output_panel->Size = System::Drawing::Size(379, 515);
 			this->output_panel->TabIndex = 2;
 			// 
 			// OutputTabControl
@@ -232,19 +273,24 @@ namespace SafeExecutorGUI {
 			this->OutputTabControl->Controls->Add(this->stdoutPage);
 			this->OutputTabControl->Controls->Add(this->stderrPage);
 			this->OutputTabControl->Dock = System::Windows::Forms::DockStyle::Fill;
+			this->OutputTabControl->Font = (gcnew System::Drawing::Font(L"メイリオ", 12, System::Drawing::FontStyle::Regular, System::Drawing::GraphicsUnit::Point,
+				static_cast<System::Byte>(128)));
+			this->OutputTabControl->ItemSize = System::Drawing::Size(60, 30);
 			this->OutputTabControl->Location = System::Drawing::Point(0, 0);
+			this->OutputTabControl->Margin = System::Windows::Forms::Padding(2);
 			this->OutputTabControl->Name = L"OutputTabControl";
 			this->OutputTabControl->SelectedIndex = 0;
-			this->OutputTabControl->Size = System::Drawing::Size(505, 540);
+			this->OutputTabControl->Size = System::Drawing::Size(379, 515);
 			this->OutputTabControl->TabIndex = 1;
 			// 
 			// stdoutPage
 			// 
 			this->stdoutPage->Controls->Add(this->OutputBox);
-			this->stdoutPage->Location = System::Drawing::Point(4, 25);
+			this->stdoutPage->Location = System::Drawing::Point(4, 34);
+			this->stdoutPage->Margin = System::Windows::Forms::Padding(2);
 			this->stdoutPage->Name = L"stdoutPage";
-			this->stdoutPage->Padding = System::Windows::Forms::Padding(3);
-			this->stdoutPage->Size = System::Drawing::Size(497, 511);
+			this->stdoutPage->Padding = System::Windows::Forms::Padding(2);
+			this->stdoutPage->Size = System::Drawing::Size(371, 477);
 			this->stdoutPage->TabIndex = 0;
 			this->stdoutPage->Text = L"標準出力";
 			this->stdoutPage->UseVisualStyleBackColor = true;
@@ -254,51 +300,57 @@ namespace SafeExecutorGUI {
 			this->OutputBox->BackColor = System::Drawing::Color::Black;
 			this->OutputBox->Cursor = System::Windows::Forms::Cursors::IBeam;
 			this->OutputBox->Dock = System::Windows::Forms::DockStyle::Fill;
+			this->OutputBox->Font = (gcnew System::Drawing::Font(L"MS UI Gothic", 14));
 			this->OutputBox->ForeColor = System::Drawing::Color::White;
-			this->OutputBox->Location = System::Drawing::Point(3, 3);
+			this->OutputBox->Location = System::Drawing::Point(2, 2);
+			this->OutputBox->Margin = System::Windows::Forms::Padding(2);
 			this->OutputBox->Name = L"OutputBox";
 			this->OutputBox->ReadOnly = true;
-			this->OutputBox->Size = System::Drawing::Size(491, 505);
+			this->OutputBox->Size = System::Drawing::Size(367, 473);
 			this->OutputBox->TabIndex = 0;
 			this->OutputBox->Text = L"";
 			// 
 			// stderrPage
 			// 
 			this->stderrPage->Controls->Add(this->OutputErrBox);
-			this->stderrPage->Location = System::Drawing::Point(4, 25);
+			this->stderrPage->Location = System::Drawing::Point(4, 34);
+			this->stderrPage->Margin = System::Windows::Forms::Padding(2);
 			this->stderrPage->Name = L"stderrPage";
-			this->stderrPage->Padding = System::Windows::Forms::Padding(3);
-			this->stderrPage->Size = System::Drawing::Size(497, 511);
+			this->stderrPage->Padding = System::Windows::Forms::Padding(2);
+			this->stderrPage->Size = System::Drawing::Size(371, 477);
 			this->stderrPage->TabIndex = 1;
 			this->stderrPage->Text = L"エラー出力";
 			this->stderrPage->UseVisualStyleBackColor = true;
 			// 
 			// OutputErrBox
 			// 
-			this->OutputErrBox->BackColor = System::Drawing::Color::Black;
+			this->OutputErrBox->BackColor = System::Drawing::SystemColors::ActiveCaptionText;
 			this->OutputErrBox->Dock = System::Windows::Forms::DockStyle::Fill;
 			this->OutputErrBox->ForeColor = System::Drawing::Color::White;
-			this->OutputErrBox->Location = System::Drawing::Point(3, 3);
+			this->OutputErrBox->Location = System::Drawing::Point(2, 2);
+			this->OutputErrBox->Margin = System::Windows::Forms::Padding(2);
 			this->OutputErrBox->Name = L"OutputErrBox";
 			this->OutputErrBox->ReadOnly = true;
-			this->OutputErrBox->Size = System::Drawing::Size(491, 505);
+			this->OutputErrBox->Size = System::Drawing::Size(367, 473);
 			this->OutputErrBox->TabIndex = 0;
 			this->OutputErrBox->Text = L"";
 			// 
 			// MainWindow
 			// 
-			this->AutoScaleDimensions = System::Drawing::SizeF(8, 15);
+			this->AutoScaleDimensions = System::Drawing::SizeF(6, 12);
 			this->AutoScaleMode = System::Windows::Forms::AutoScaleMode::Font;
-			this->ClientSize = System::Drawing::Size(1148, 748);
+			this->ClientSize = System::Drawing::Size(861, 598);
 			this->Controls->Add(this->output_panel);
 			this->Controls->Add(this->checklist_panel);
 			this->Controls->Add(this->target_exe_selection_panel);
-			this->Margin = System::Windows::Forms::Padding(4);
+			this->Icon = (cli::safe_cast<System::Drawing::Icon^>(resources->GetObject(L"$this.Icon")));
 			this->Name = L"MainWindow";
-			this->Text = L"MainWindow";
+			this->Text = L"安全実行侍~俺を信じろ~";
 			this->target_exe_selection_panel->ResumeLayout(false);
 			this->target_exe_selection_panel->PerformLayout();
 			this->checklist_panel->ResumeLayout(false);
+			this->checklist_panel->PerformLayout();
+			(cli::safe_cast<System::ComponentModel::ISupportInitialize^>(this->pictureBox1))->EndInit();
 			this->output_panel->ResumeLayout(false);
 			this->OutputTabControl->ResumeLayout(false);
 			this->stdoutPage->ResumeLayout(false);
@@ -457,6 +509,10 @@ private: System::Void target_exe_selection_panel_DragEnter(System::Object^ sende
 private: System::Void target_exe_selection_panel_DragDrop(System::Object^ sender, System::Windows::Forms::DragEventArgs^ e) {
 	array<String^>^ droppedFiles = (array<String^>^)e->Data->GetData(DataFormats::FileDrop);
 	FileSelectTextBox->Text = droppedFiles[0];
+}
+private: System::Void textBox1_TextChanged(System::Object^ sender, System::EventArgs^ e) {
+}
+private: System::Void pictureBox1_Click(System::Object^ sender, System::EventArgs^ e) {
 }
 };
 }
