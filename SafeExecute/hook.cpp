@@ -29,8 +29,8 @@ std::string PathToFileName(char* path) {
 typedef BOOL(WINAPI* SETFILEATTRIBUTESA)(LPCSTR lpFileName, DWORD dwFileAttributes);
 typedef BOOL(WINAPI* SETFILEATTRIBUTESW)(LPCWSTR lpFileName, DWORD dwFileAttributes);
 typedef BOOL(WINAPI* ISDEBUGGERPRESENT)();
-typedef BOOL(WINAPI* CREATEPROCESSA)(PCTSTR pszApplicationName, PTSTR  pszCommandLine, PSECURITY_ATTRIBUTES psaProcess, PSECURITY_ATTRIBUTES psaThread, BOOL   bInheritHandles, DWORD  fdwCreate, PVOID  pvEnvironment, PCTSTR pszCurDir, LPSTARTUPINFO  psiStartInfo, PPROCESS_INFORMATION ppiProcInfo);
-typedef BOOL(WINAPI* CREATEPROCESSW)(LPCWSTR lpApplicationName, LPWSTR  lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles, DWORD dwCreationFlags, LPVOID  lpEnvironment, LPCWSTR lpCurrentDirectory, LPSTARTUPINFO lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
+typedef BOOL(WINAPI* CREATEPROCESSA)(LPCSTR lpApplicationName, LPSTR lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles, DWORD  dwCreationFlags, LPVOID lpEnvironment, LPCSTR lpCurrentDirectory, LPSTARTUPINFOA  lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
+typedef BOOL(WINAPI* CREATEPROCESSW)(LPCWSTR lpApplicationName, LPWSTR lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles, DWORD dwCreationFlags, LPVOID  lpEnvironment, LPCWSTR lpCurrentDirectory, LPSTARTUPINFO lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);
 typedef INT(WSAAPI* INETPTON)(INT Family, PCSTR pszAddrString, PVOID pAddrBuf);
 typedef HINTERNET (WINAPI* INTERNETOPENURLA)(HINTERNET hInternet, LPCSTR lpszUrl, LPCSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
 typedef HINTERNET(WINAPI* INTERNETOPENURLW)(HINTERNET hInternet, LPCWSTR lpszUrl, LPCWSTR lpszHeaders, DWORD dwHeadersLength, DWORD dwFlags, DWORD_PTR dwContext);
@@ -141,31 +141,48 @@ bool WINAPI IsDebuggerPresent_Hook() {
 }
 
 bool WINAPI CreateProcessA_Hook(
-    PCTSTR pszApplicationName,
-    PTSTR  pszCommandLine,
-    PSECURITY_ATTRIBUTES psaProcess,
-    PSECURITY_ATTRIBUTES psaThread,
-    BOOL   bInheritHandles,
-    DWORD  fdwCreate,
-    PVOID  pvEnvironment,
-    PCTSTR pszCurDir,
-    LPSTARTUPINFO  psiStartInfo,
-    PPROCESS_INFORMATION ppiProcInfo
+    LPCSTR lpApplicationName,
+    LPSTR lpCommandLine,
+    LPSECURITY_ATTRIBUTES lpProcessAttributes,
+    LPSECURITY_ATTRIBUTES lpThreadAttributes,
+    BOOL bInheritHandles,
+    DWORD dwCreationFlags,
+    LPVOID lpEnvironment,
+    LPCSTR lpCurrentDirectory,
+    LPSTARTUPINFOA lpStartupInfo,
+    LPPROCESS_INFORMATION lpProcessInformation
 ) {
     PreHook(1, "CreateProcessA");
     char buf[300];
-    if (pszApplicationName == NULL)
-        snprintf(buf, 300, "This executable is trying to execute a file below\n%s\nContinue execution?", pszCommandLine);
+    if (lpApplicationName == NULL)
+        snprintf(buf, 300, "This executable is trying to execute a file below\n%s\nContinue execution?", lpCommandLine);
     else {
-        if(pszCommandLine==NULL)
-            snprintf(buf, 300, "This executable is trying to execute a file below\n%s\nContinue execution?", pszApplicationName);
+        if(lpCommandLine==NULL)
+            snprintf(buf, 300, "This executable is trying to execute a file below\n%s\nContinue execution?", lpApplicationName);
         else
-            snprintf(buf, 300, "This executable is trying to execute a file below\n%s %s\nContinue execution?", pszApplicationName, pszCommandLine);
+            snprintf(buf, 300, "This executable is trying to execute a file below\n%s %s\nContinue execution?", lpApplicationName, lpCommandLine);
     }
     res = MsgBox(buf);
     if (res == IDNO)
         ExitProcess(1);
-    return orig_CreateProcessA(pszApplicationName, pszCommandLine, psaProcess, psaThread, bInheritHandles, fdwCreate, pvEnvironment, pszCurDir, psiStartInfo, ppiProcInfo);
+
+    BOOL suspended = ((dwCreationFlags & CREATE_SUSPENDED) != 0);
+    dwCreationFlags |= CREATE_SUSPENDED;
+    BOOL res = orig_CreateProcessA(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
+    
+    // inject SafeExecute.dll to child process
+    FARPROC lib = GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
+    char dllpath[MAX_PATH];
+    GetModuleFileNameA(GetModuleHandleA("SafeExecute.dll"), dllpath, MAX_PATH);    
+    size_t dllpathSize = strlen(dllpath);
+    LPVOID allocMem = VirtualAllocEx(lpProcessInformation->hProcess, NULL, dllpathSize, MEM_COMMIT, PAGE_READWRITE);
+    WriteProcessMemory(lpProcessInformation->hProcess, allocMem, dllpath, dllpathSize, NULL);
+    CreateRemoteThread(lpProcessInformation->hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)lib, allocMem, 0, NULL);
+    Sleep(200);
+
+    if (!suspended)
+        ResumeThread(lpProcessInformation->hThread);
+    return res;
 }
 
 BOOL WINAPI CreateProcessW_Hook (
@@ -193,7 +210,24 @@ BOOL WINAPI CreateProcessW_Hook (
     res = MsgBox(buf);
     if (res == IDNO)
         ExitProcess(1);
-    return orig_CreateProcessW(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
+
+    BOOL suspended = ((dwCreationFlags & CREATE_SUSPENDED) != 0);
+    dwCreationFlags |= CREATE_SUSPENDED;
+    BOOL res = orig_CreateProcessW(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
+
+    // inject SafeExecute.dll to child process
+    FARPROC lib = GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
+    char dllpath[MAX_PATH];
+    GetModuleFileNameA(GetModuleHandleA("SafeExecute.dll"), dllpath, MAX_PATH);
+    size_t dllpathSize = strlen(dllpath);
+    LPVOID allocMem = VirtualAllocEx(lpProcessInformation->hProcess, NULL, dllpathSize, MEM_COMMIT, PAGE_READWRITE);
+    WriteProcessMemory(lpProcessInformation->hProcess, allocMem, dllpath, dllpathSize, NULL);
+    CreateRemoteThread(lpProcessInformation->hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)lib, allocMem, 0, NULL);
+    Sleep(200);
+
+    if (!suspended)
+        ResumeThread(lpProcessInformation->hThread);
+    return res;
 }
 
 int WSAAPI inet_pton_Hook(
