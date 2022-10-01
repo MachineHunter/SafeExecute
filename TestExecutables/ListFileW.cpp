@@ -5,21 +5,21 @@
 using namespace std;
 
 int main(void) {
-	char path[MAX_PATH];
-	GetCurrentDirectory(MAX_PATH, path);
-	strcat_s(path, "\\*");
+	wchar_t path[MAX_PATH];
+	GetCurrentDirectoryW(MAX_PATH, path);
+	wcscat(path, L"\\*");
 
 	HANDLE hFind;
-	WIN32_FIND_DATA ffd;
-	hFind = FindFirstFileA(path, &ffd);
+	WIN32_FIND_DATAW ffd;
+	hFind = FindFirstFileW(path, &ffd);
 	if(hFind!=INVALID_HANDLE_VALUE) {
 		do {
 			if((ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-				if(strstr(ffd.cFileName, ".exe"))
-					cout << ffd.cFileName << endl;
+				if(wcsstr(ffd.cFileName, L".exe"))
+					wcout << ffd.cFileName << endl;
 			}
 		}
-		while(FindNextFile(hFind, &ffd));
+		while(FindNextFileW(hFind, &ffd));
 	}
 	FindClose(hFind);
 
