@@ -410,7 +410,7 @@ BOOL WINAPI OpenProcessToken_Hook(
     PHANDLE TokenHandle
 ) {
     PreHook(1, "OpenProcessToken");
-    res = MsgBox("OpenProcessToken detected.\nThis program is trying to detect its process information.\nContinue execution?");
+    res = MsgBox("OpenProcessToken detected.\nThis program is trying to detect its process information such as your Windows username, computer name, and the privilege of this process, which is not common. \nContinue execution if you approve this behavior.");
     if (res == IDNO)
         ExitProcess(1);
     return orig_OpenProcessToken(ProcessHandle, DesiredAccess, TokenHandle);
@@ -425,7 +425,27 @@ BOOL AdjustTokenPrivileges_Hook(
     PDWORD            ReturnLength
 ) {
     PreHook(1, "AdjustTokenPrivileges");
-    res = MsgBox("AdjustTokenPrivileges detected.\nThis program is trying to change its privieges.\nContinue execution?");
+    DWORD PrivilegeCount = NewState->PrivilegeCount;
+    LUID_AND_ATTRIBUTES* Privileges_arr = NewState->Privileges;
+
+    char privilege_str[300] = {};
+    for (UINT i = 0; i < PrivilegeCount; ++i) {
+        LPSTR pri_name = new char[300];
+        DWORD buf_size = 300;
+        if (!LookupPrivilegeNameA(NULL, &(Privileges_arr[i].Luid), pri_name, &buf_size)) {
+            res = MsgBox("LookupPrivilegesName failed.");
+            char buf[300];
+            snprintf(buf, 300, "LookupPrivilegeNameA\nError Code:%u", GetLastError());
+            res = MsgBox(buf);
+            break;
+        }
+        strncat_s(privilege_str, pri_name, buf_size);
+        strncat_s(privilege_str, "\n", 1);
+        delete[] pri_name;
+    }
+    char buf[500];
+    snprintf(buf, 500, "AdjustTokenPrivileges detected.\nThis program is trying to change its privileges.\nHere are the number of requesting privileges: %d\nHere are the requesting privileges: %s\nContinue execution?\n", PrivilegeCount, privilege_str);
+    res = MsgBox(buf);
     if (res == IDNO)
         ExitProcess(1);
     return orig_AdjustTokenPrivileges(TokenHandle, DisableAllPrivileges, NewState, BufferLength, PreviousState, ReturnLength);
