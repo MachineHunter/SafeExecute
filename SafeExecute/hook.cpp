@@ -2,6 +2,7 @@
 #include "hook.h"
 
 int res;
+bool CreateProcessChecked = false;
 
 std::string WStringToString(const std::wstring& ws) {
     std::string s(ws.length(), ' ');
@@ -156,23 +157,25 @@ bool WINAPI CreateProcessA_Hook(
     LPSTARTUPINFOA lpStartupInfo,
     LPPROCESS_INFORMATION lpProcessInformation
 ) {
-    PreHook(1, "CreateProcessA");
-    char buf[300];
-    if (lpApplicationName == NULL)
-        snprintf(buf, 300, "This executable is trying to execute a file below\n%s\nContinue execution?", lpCommandLine);
-    else {
-        if(lpCommandLine==NULL)
-            snprintf(buf, 300, "This executable is trying to execute a file below\n%s\nContinue execution?", lpApplicationName);
-        else
-            snprintf(buf, 300, "This executable is trying to execute a file below\n%s %s\nContinue execution?", lpApplicationName, lpCommandLine);
+    if (CreateProcessChecked) {
+        PreHook(1, "CreateProcessA");
+        char buf[300];
+        if (lpApplicationName == NULL)
+            snprintf(buf, 300, "This executable is trying to execute a file below\n%s\nContinue execution?", lpCommandLine);
+        else {
+            if(lpCommandLine==NULL)
+                snprintf(buf, 300, "This executable is trying to execute a file below\n%s\nContinue execution?", lpApplicationName);
+            else
+                snprintf(buf, 300, "This executable is trying to execute a file below\n%s %s\nContinue execution?", lpApplicationName, lpCommandLine);
+        }
+        res = MsgBox(buf);
+        if (res == IDNO)
+            ExitProcess(1);
     }
-    res = MsgBox(buf);
-    if (res == IDNO)
-        ExitProcess(1);
 
     BOOL suspended = ((dwCreationFlags & CREATE_SUSPENDED) != 0);
     dwCreationFlags |= CREATE_SUSPENDED;
-    BOOL res = orig_CreateProcessA(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
+    BOOL res2 = orig_CreateProcessA(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
     
     // inject SafeExecute.dll to child process
     FARPROC lib = GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
@@ -186,7 +189,7 @@ bool WINAPI CreateProcessA_Hook(
 
     if (!suspended)
         ResumeThread(lpProcessInformation->hThread);
-    return res;
+    return res2;
 }
 
 BOOL WINAPI CreateProcessW_Hook (
@@ -201,23 +204,25 @@ BOOL WINAPI CreateProcessW_Hook (
     LPSTARTUPINFO lpStartupInfo,
     LPPROCESS_INFORMATION lpProcessInformation
 ) {
-    PreHook(1, "CreateProcessW");
-    char buf[300];
-    if (lpApplicationName == NULL)
-        snprintf(buf, 300, "This executable is trying to execute a file below\n%S\nContinue execution?", lpCommandLine);
-    else {
-        if (lpCommandLine == NULL)
-            snprintf(buf, 300, "This executable is trying to execute a file below\n%S\nContinue execution?", lpApplicationName);
-        else
-            snprintf(buf, 300, "This executable is trying to execute a file below\n%S %S\nContinue execution?", lpApplicationName, lpCommandLine);
+    if (CreateProcessChecked) {
+        PreHook(1, "CreateProcessW");
+        char buf[300];
+        if (lpApplicationName == NULL)
+            snprintf(buf, 300, "This executable is trying to execute a file below\n%S\nContinue execution?", lpCommandLine);
+        else {
+            if (lpCommandLine == NULL)
+                snprintf(buf, 300, "This executable is trying to execute a file below\n%S\nContinue execution?", lpApplicationName);
+            else
+                snprintf(buf, 300, "This executable is trying to execute a file below\n%S %S\nContinue execution?", lpApplicationName, lpCommandLine);
+        }
+        res = MsgBox(buf);
+        if (res == IDNO)
+            ExitProcess(1);
     }
-    res = MsgBox(buf);
-    if (res == IDNO)
-        ExitProcess(1);
 
     BOOL suspended = ((dwCreationFlags & CREATE_SUSPENDED) != 0);
     dwCreationFlags |= CREATE_SUSPENDED;
-    BOOL res = orig_CreateProcessW(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
+    BOOL res2 = orig_CreateProcessW(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
 
     // inject SafeExecute.dll to child process
     FARPROC lib = GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
@@ -231,7 +236,7 @@ BOOL WINAPI CreateProcessW_Hook (
 
     if (!suspended)
         ResumeThread(lpProcessInformation->hThread);
-    return res;
+    return res2;
 }
 
 int WSAAPI inet_pton_Hook(
