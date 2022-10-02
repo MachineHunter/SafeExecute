@@ -29,3 +29,5 @@ GetLocaleInfoA,1
 GetLocaleInfoW,1
 SystemParametersInfoA, 1
 SystemParametersInfoW, 1
+URLDownloadToFileA,1
+URLDownloadToFileW,1
