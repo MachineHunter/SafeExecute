@@ -340,7 +340,8 @@ HANDLE WINAPI CreateFileA_Hook(
         strFileName = PathToFileName((LPSTR)lpFileName);
 
         char path[MAX_PATH];
-        GetCurrentDirectoryA(MAX_PATH, path);
+        GetModuleFileNameA(GetModuleHandleA("SafeExecute.dll"), path, MAX_PATH);
+        PathRemoveFileSpecA(path);
         strcat_s(path, "\\backups\\");
 
         if (PathFileExistsA(path)) {
@@ -381,7 +382,8 @@ HANDLE WINAPI CreateFileW_Hook(
         strFileName = PathToFileName((LPSTR)WStringToString(lpFileName).c_str());
 
         char path[MAX_PATH];
-        GetCurrentDirectoryA(MAX_PATH, path);
+        GetModuleFileNameA(GetModuleHandleA("SafeExecute.dll"), path, MAX_PATH);
+        PathRemoveFileSpecA(path);
         strcat_s(path, "\\backups\\");
 
         if (PathFileExistsA(path)) {

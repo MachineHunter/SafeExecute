@@ -486,7 +486,7 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 	// TODO: 
 	char path[MAX_PATH];
 	GetModuleFileNameA(NULL, path, MAX_PATH);
-	for (int i = 0; i < 4; i++) PathRemoveFileSpecA(path);
+	PathRemoveFileSpecA(path);
 	strcat_s(path, "\\rules");
 
 	if (PathFileExistsA(path)) {
@@ -550,13 +550,13 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 	if (PathFileExistsA(exePath)) {
 		// TODO: ‚±‚ÌƒpƒX‚ÌŒvŽZ‚ð‚¢‚Â‚©ŠÂ‹«•Ï”‚Æ‚©‚Å®—‚µ‚½‚¢
 		//   —á) [System.Environment]::SetEnvironmentVariable("SafeExecuteInstallDir", $PSScriptRoot, "Machine")
-		for(int i=0; i<4; i++) PathRemoveFileSpecA(path);
+		PathRemoveFileSpecA(path);
 		SetCurrentDirectoryA(path);
 		char executorPath[MAX_PATH];
-		snprintf(executorPath, MAX_PATH, "%s\\%s", path, "SafeExecutor\\x64\\Debug\\SafeExecutor.exe");
+		snprintf(executorPath, MAX_PATH, "%s\\%s", path, "SafeExecutor.exe");
 		char dllPath[MAX_PATH];
-		snprintf(dllPath, MAX_PATH, "%s\\%s", path, "SafeExecute\\x64\\Debug\\SafeExecute.dll");
-
+		snprintf(dllPath, MAX_PATH, "%s\\%s", path, "SafeExecute.dll");
+		
 		if (PathFileExistsA(executorPath) && PathFileExistsA(dllPath)) {
 			char arg[MAX_PATH * 10];
 			memset(arg, 0, sizeof(arg));
