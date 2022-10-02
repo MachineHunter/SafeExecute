@@ -268,8 +268,7 @@ bool WINAPI WriteFile_Hook(
     PreHook(1, "WriteFile");
 
     char Path[300];
-    DWORD dwRet;
-    dwRet = GetFinalPathNameByHandleA(hFile, Path, 300, FILE_NAME_OPENED);
+    GetFinalPathNameByHandleA(hFile, Path, 300, FILE_NAME_OPENED);
     char buf_msg[512];
     sprintf_s(buf_msg, 512, "This executable is trying to write \" %s \" to \" %s \"\nContinue execution ? ", (const char*)lpBuffer, (const char*)Path);
     res = MsgBox(buf_msg);
