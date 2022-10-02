@@ -18,7 +18,6 @@ public:
 		buf21 = gcnew StrList();
 		buf22 = gcnew StrList();
 		buf23 = gcnew StrList();
-		buf24 = gcnew StrList();
 		buf31 = gcnew StrList();
 		buf41 = gcnew StrList();
 		buf51 = gcnew StrList();
@@ -60,8 +59,8 @@ public:
 		apiDict->Add("WinInet", buf22);
 
 		buf23->Add("URLDownloadToFileA");
-		buf24->Add("URLDownloadToFileW");
-		apiDict->Add("ファイルダウンロード", buf24);
+		buf23->Add("URLDownloadToFileW");
+		apiDict->Add("ファイルダウンロード", buf23);
 
 		//レジストリ操作
 		buf31->Add("RegCreateKeyExA");
@@ -119,7 +118,6 @@ private:
 	StrList^ buf21;
 	StrList^ buf22;
 	StrList^ buf23;
-	StrList^ buf24;
 	StrList^ buf31;
 	StrList^ buf41;
 	StrList^ buf51;
