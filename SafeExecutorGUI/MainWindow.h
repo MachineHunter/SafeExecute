@@ -527,20 +527,41 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 	char path[MAX_PATH];
 	GetModuleFileNameA(NULL, path, MAX_PATH);
 	for (int i = 0; i < 4; i++) PathRemoveFileSpecA(path);
-	strcat_s(path, "\\rules");
+	strcat_s(path, "\\rules"); //ここまでで"path"\\rulesができる．
 
-	if (PathFileExistsA(path)) {
-		strcat_s(path, "\\rules.csv");
+	char rulesPath[MAX_PATH];
+	char modePath[MAX_PATH];
+	strcpy_s(rulesPath, path);
+	strcpy_s(modePath, path);
 
-		HANDLE hFile;
+	if (PathFileExistsA(rulesPath)) {
+		strcat_s(rulesPath, "\\rules.csv"); //これでrulesPathがcsvファイルのパスを指す
+		strcat_s(modePath, "\\mode.txt"); //これでmodePathがtxtファイルのパスを指す
+
+		HANDLE hFileRule;
+		HANDLE hFileMode;
 		DWORD writesize;
 		ApiDict^ ad = gcnew ApiDict();
 
-		if (PathFileExistsA(path)) {
-			DeleteFileA(path);
+		// rules.csvまたはmode.txtファイルが存在するなら一度消す
+		if (PathFileExistsA(rulesPath) || PathFileExistsA(modePath)) {
+			DeleteFileA(rulesPath);
+			DeleteFileA(modePath);
 		}
 		
-		hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		// mode.txtへモードの状態を0,1,2で書き込む
+		hFileMode = CreateFileA(modePath, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		char mode[2];
+		memset(mode, 0, 2);
+		char modelIndex = '0' + comboBoxModeSelection->SelectedIndex;
+		strcat(mode, &modelIndex);
+		strcat(mode, "\n");
+		DWORD writesizeMode;
+		WriteFile(hFileMode, mode, strlen(mode), &writesize, NULL);
+		CloseHandle(hFileMode);
+
+		// rules.csvへWinAPI名とチェック状態の組をcsvに書き込む操作
+		hFileRule = CreateFileA(rulesPath, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		
 		for each(TreeNode ^n in treeView->Nodes)
 		{
@@ -566,8 +587,8 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 							strcat(buf, &c);
 							strcat(buf, "\n");
 							DWORD writesize;
-							WriteFile(hFile, buf, strlen(buf), &writesize, NULL);
-							SetFilePointer(hFile, 0, NULL, FILE_END);
+							WriteFile(hFileRule, buf, strlen(buf), &writesize, NULL);
+							SetFilePointer(hFileRule, 0, NULL, FILE_END);
 						}
 					}
 
@@ -578,7 +599,7 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 				}
 			}
 		}
-		CloseHandle(hFile);
+		CloseHandle(hFileRule);
 	}
 
 
