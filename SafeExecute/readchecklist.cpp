@@ -39,7 +39,11 @@ void ReadCheckList() {
 					}
 					else {
 						if (hooklist[i].func.name == apiname) {
-							hooklist[i].isChecked = isChecked;
+							if (apiname.find("CreateProcess") != string::npos) {
+								CreateProcessChecked = isChecked;
+								hooklist[i].isChecked = true;
+							}
+							else hooklist[i].isChecked = isChecked;
 						}
 					}
 				}
