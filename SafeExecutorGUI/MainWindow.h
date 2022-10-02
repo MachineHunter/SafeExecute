@@ -45,6 +45,7 @@ namespace SafeExecutorGUI {
 			array<TreeNode^>^ nodChildNet = {
 				gcnew TreeNode("WinSock"),
 				gcnew TreeNode("WinInet"),
+				gcnew TreeNode("ファイルダウンロード")
 			};
 			TreeNode^ nodNet = gcnew TreeNode("インターネット接続", nodChildNet);
 			treeView->Nodes->Add(nodNet);
