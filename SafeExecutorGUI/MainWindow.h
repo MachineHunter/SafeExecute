@@ -31,57 +31,55 @@ namespace SafeExecutorGUI {
 	public:
 		MainWindow(void)
 		{
-
 			InitializeComponent();
-			//
-			//TODO: ここにコンストラクター コードを追加します
-			//apiDic
-
-			//ファイル操作
+			
 			array<TreeNode^>^ nodChildFiles = {
 				gcnew TreeNode("ファイル名変更"),
 				gcnew TreeNode("ファイル削除"),
-				gcnew TreeNode("ファイル書き込み")
+				gcnew TreeNode("ファイル書き込み"),
+				gcnew TreeNode("ファイル走査")
 			};
-
 			TreeNode^ nodFile = gcnew TreeNode("ファイル操作", nodChildFiles);
 			treeView->Nodes->Add(nodFile);
 
-			//インターネット接続
 			array<TreeNode^>^ nodChildNet = {
 				gcnew TreeNode("WinSock"),
 				gcnew TreeNode("WinInet"),
 			};
-
 			TreeNode^ nodNet = gcnew TreeNode("インターネット接続", nodChildNet);
 			treeView->Nodes->Add(nodNet);
-
-
-			//レジストリ操作
+			
 			array<TreeNode^>^ nodChildRegistory= {
 				gcnew TreeNode("RUNレジストリへの登録"),
 			};
-
 			TreeNode^ nodRegistory = gcnew TreeNode("レジストリ操作", nodChildRegistory);
 			treeView->Nodes->Add(nodRegistory);
-
-			//プロセス操作
+			
 			array<TreeNode^>^ nodChildProcess = {
 				gcnew TreeNode("子プロセスの生成"),
+				gcnew TreeNode("プロセスの権限変更")
 			};
-
 			TreeNode^ nodProcess = gcnew TreeNode("プロセス操作", nodChildProcess);
 			treeView->Nodes->Add(nodProcess);
-	
-			//マルウェアっぽい挙動
+			
 			array<TreeNode^>^ nodChildMalware = {
 				gcnew TreeNode("デバッガ検知"),
 				gcnew TreeNode("暗号化処理"),
 				gcnew TreeNode("自分自身の隠しファイル化"),
+				gcnew TreeNode("ロケール情報の取得"),
+				gcnew TreeNode("タイマーの使用"),
+				gcnew TreeNode("デスクトップ壁紙の変更")
 			};
-
 			TreeNode^ nodMalware= gcnew TreeNode("マルウェアっぽい挙動", nodChildMalware);
 			treeView->Nodes->Add(nodMalware);
+
+			array<TreeNode^>^ nodChildFunction = {
+				gcnew TreeNode("ファイルのバックアップ"),
+			};
+			TreeNode^ nodFunction = gcnew TreeNode("機能", nodChildFunction);
+			nodFunction->Checked = true;
+			for each (TreeNode ^ n in nodChildFunction) n->Checked = true;
+			treeView->Nodes->Add(nodFunction);
 	}
 
 	protected:
@@ -114,6 +112,8 @@ namespace SafeExecutorGUI {
 	private: System::Windows::Forms::TextBox^ ArgTextBox;
 	private: System::Windows::Forms::Label^ label2;
 	private: System::Windows::Forms::Label^ label1;
+	private: System::Windows::Forms::Button^ clearButton;
+	private: System::Windows::Forms::Button^ selectAllButton;
 
 
 
@@ -141,6 +141,8 @@ namespace SafeExecutorGUI {
 			this->FileSelectBtn = (gcnew System::Windows::Forms::Button());
 			this->FileSelectTextBox = (gcnew System::Windows::Forms::TextBox());
 			this->checklist_panel = (gcnew System::Windows::Forms::Panel());
+			this->clearButton = (gcnew System::Windows::Forms::Button());
+			this->selectAllButton = (gcnew System::Windows::Forms::Button());
 			this->pictureBox1 = (gcnew System::Windows::Forms::PictureBox());
 			this->checkboxZoneTitle = (gcnew System::Windows::Forms::TextBox());
 			this->treeView = (gcnew System::Windows::Forms::TreeView());
@@ -275,6 +277,8 @@ namespace SafeExecutorGUI {
 			// checklist_panel
 			// 
 			this->checklist_panel->BackColor = System::Drawing::SystemColors::Window;
+			this->checklist_panel->Controls->Add(this->clearButton);
+			this->checklist_panel->Controls->Add(this->selectAllButton);
 			this->checklist_panel->Controls->Add(this->pictureBox1);
 			this->checklist_panel->Controls->Add(this->checkboxZoneTitle);
 			this->checklist_panel->Controls->Add(this->treeView);
@@ -284,6 +288,30 @@ namespace SafeExecutorGUI {
 			this->checklist_panel->Name = L"checklist_panel";
 			this->checklist_panel->Size = System::Drawing::Size(647, 614);
 			this->checklist_panel->TabIndex = 1;
+			// 
+			// clearButton
+			// 
+			this->clearButton->Font = (gcnew System::Drawing::Font(L"メイリオ", 10.5F));
+			this->clearButton->Location = System::Drawing::Point(492, 30);
+			this->clearButton->Name = L"clearButton";
+			this->clearButton->Size = System::Drawing::Size(80, 40);
+			this->clearButton->TabIndex = 4;
+			this->clearButton->TabStop = false;
+			this->clearButton->Text = L"クリア";
+			this->clearButton->UseVisualStyleBackColor = true;
+			this->clearButton->Click += gcnew System::EventHandler(this, &MainWindow::clearButton_Click);
+			// 
+			// selectAllButton
+			// 
+			this->selectAllButton->Font = (gcnew System::Drawing::Font(L"メイリオ", 10.5F));
+			this->selectAllButton->Location = System::Drawing::Point(396, 30);
+			this->selectAllButton->Name = L"selectAllButton";
+			this->selectAllButton->Size = System::Drawing::Size(80, 40);
+			this->selectAllButton->TabIndex = 3;
+			this->selectAllButton->TabStop = false;
+			this->selectAllButton->Text = L"全選択";
+			this->selectAllButton->UseVisualStyleBackColor = true;
+			this->selectAllButton->Click += gcnew System::EventHandler(this, &MainWindow::selectAllButton_Click);
 			// 
 			// pictureBox1
 			// 
@@ -394,7 +422,7 @@ namespace SafeExecutorGUI {
 			this->stderrPage->Margin = System::Windows::Forms::Padding(3, 2, 3, 2);
 			this->stderrPage->Name = L"stderrPage";
 			this->stderrPage->Padding = System::Windows::Forms::Padding(3, 2, 3, 2);
-			this->stderrPage->Size = System::Drawing::Size(497, 606);
+			this->stderrPage->Size = System::Drawing::Size(493, 576);
 			this->stderrPage->TabIndex = 1;
 			this->stderrPage->Text = L"エラー出力";
 			this->stderrPage->UseVisualStyleBackColor = true;
@@ -409,7 +437,7 @@ namespace SafeExecutorGUI {
 			this->OutputErrBox->Margin = System::Windows::Forms::Padding(3, 2, 3, 2);
 			this->OutputErrBox->Name = L"OutputErrBox";
 			this->OutputErrBox->ReadOnly = true;
-			this->OutputErrBox->Size = System::Drawing::Size(491, 602);
+			this->OutputErrBox->Size = System::Drawing::Size(487, 572);
 			this->OutputErrBox->TabIndex = 0;
 			this->OutputErrBox->Text = L"";
 			// 
@@ -613,6 +641,14 @@ private: System::Void ArgButton_Click(System::Object^ sender, System::EventArgs^
 			stream->Close();
 		}
 	}
+}
+private: System::Void selectAllButton_Click(System::Object^ sender, System::EventArgs^ e) {
+	for each (TreeNode ^ n in treeView->Nodes)
+		n->Checked = true;
+}
+private: System::Void clearButton_Click(System::Object^ sender, System::EventArgs^ e) {
+	for each (TreeNode ^ n in treeView->Nodes)
+		n->Checked = false;
 }
 };
 }
