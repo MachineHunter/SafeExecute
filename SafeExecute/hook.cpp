@@ -426,7 +426,11 @@ bool WINAPI DeleteFileW_Hook(
 ) {
     PreHook(1, "DeleteFileW");
     // DeleteFileWの実行を検知
-    ExitProcess(1);
+    char buf_msg[500];
+    sprintf_s(buf_msg, "This executable is trying to delete %s \nContinue execution ? ", WStringToString(lpFileName).c_str());
+    res = MsgBox(buf_msg);
+    if (res == IDNO)
+        ExitProcess(1);
     return orig_DeleteFileW(lpFileName);
 }
 
@@ -435,7 +439,11 @@ bool WINAPI DeleteFileA_Hook(
 ) {
     PreHook(1, "DeleteFileA");
     // DeleteFileAの実行を検知
-    ExitProcess(1);
+    char buf_msg[500];
+    sprintf_s(buf_msg, "This executable is trying to delete %s \nContinue execution ? ", lpFileName);
+    res = MsgBox(buf_msg);
+    if (res == IDNO)
+        ExitProcess(1);
     return orig_DeleteFileA(lpFileName);
 }
 
