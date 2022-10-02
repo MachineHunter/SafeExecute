@@ -60,6 +60,8 @@ typedef INT(WINAPI* GETLOCALEINFOEX)(LPCWSTR lpLocaleName, LCTYPE LCType, LPWSTR
 typedef BOOL(WINAPI* CREATETIMERQUEUETIMER)(PHANDLE phNewTimer, HANDLE TimerQueue, WAITORTIMERCALLBACK Callback, PVOID Parameter, DWORD DueTime, DWORD Period, ULONG Flags);
 typedef BOOL(WINAPI* SYSTEMPARAMETERSINFOA)(UINT uiAction, UINT uiParam, PVOID pvParam, UINT fWinIni);
 typedef BOOL(WINAPI* SYSTEMPARAMETERSINFOW)(UINT uiAction, UINT uiParam, PVOID pvParam, UINT fWinIni);
+typedef HRESULT(WINAPI* URLDOWNLOADTOFILEA)(LPUNKNOWN pCaller, LPCSTR szURL, LPCSTR szFileName, _Reserved_ DWORD dwReserved, LPBINDSTATUSCALLBACK lpfnCB);
+typedef HRESULT(WINAPI* URLDOWNLOADTOFILEW)(LPUNKNOWN pCaller, LPCWSTR szURL, LPCWSTR szFileName, _Reserved_ DWORD dwReserved, LPBINDSTATUSCALLBACK lpfnCB);
 SETFILEATTRIBUTESA orig_SetFileAttributesA;
 SETFILEATTRIBUTESW orig_SetFileAttributesW;
 ISDEBUGGERPRESENT orig_IsDebuggerPresent;
@@ -94,6 +96,8 @@ GETLOCALEINFOEX orig_GetLocaleInfoEx;
 CREATETIMERQUEUETIMER orig_CreateTimerQueueTimer;
 SYSTEMPARAMETERSINFOA orig_SystemParametersInfoA;
 SYSTEMPARAMETERSINFOW orig_SystemParametersInfoW;
+URLDOWNLOADTOFILEA orig_URLDownloadToFileA;
+URLDOWNLOADTOFILEW orig_URLDownloadToFileW;
 
 
 
@@ -781,6 +785,42 @@ BOOL AdjustTokenPrivileges_Hook(
     return orig_AdjustTokenPrivileges(TokenHandle, DisableAllPrivileges, NewState, BufferLength, PreviousState, ReturnLength);
 }
 
+HRESULT WINAPI URLDownloadToFileA_Hook(
+    LPUNKNOWN pCaller,
+    LPCSTR szURL,
+    LPCSTR szFileName,
+    _Reserved_ DWORD dwReserved,
+    LPBINDSTATUSCALLBACK lpfnCB
+) { 
+    char msg[1000];
+    sprintf_s(msg, "Downloading File Detected.\nMalware often download malicious files.\nURL: '%s'.\nFile name: '%s'\nContinue execution?", szURL, szFileName);
+
+    PreHook(3, "URLDownloadToFileA", szURL, szFileName);
+    res = MsgBox(msg);
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_URLDownloadToFileA(pCaller, szURL, szFileName, dwReserved, lpfnCB);
+
+}
+
+HRESULT WINAPI URLDownloadToFileW_Hook(
+    LPUNKNOWN pCaller,
+    LPCWSTR szURL,
+    LPCWSTR szFileName,
+    _Reserved_ DWORD dwReserved,
+    LPBINDSTATUSCALLBACK lpfnCB
+) {
+    char msg[1000];
+    sprintf_s(msg, "Downloading File Detected.\nMalware often download malicious files.\nURL: '%s'.\nFile name: '%s'\nContinue execution?", WStringToString(szURL).c_str(), WStringToString(szFileName).c_str());
+
+    PreHook(3, "URLDownloadToFileW", WStringToString(szURL).c_str(), WStringToString(szFileName).c_str());
+    res = MsgBox(msg);
+    if (res == IDNO)
+        ExitProcess(1);
+    return orig_URLDownloadToFileW(pCaller, szURL, szFileName, dwReserved, lpfnCB);
+
+}
+
 // 3: フックする全てのWindowsAPIのリスト
 HookList hooklist = {
         HookFunc("kernel32.dll", "SetFileAttributesA", (void**)&orig_SetFileAttributesA, (void*)SetFileAttributesA_Hook),
@@ -816,7 +856,9 @@ HookList hooklist = {
         HookFunc("kernel32.dll", "GetLocaleInfoEx", (void**)&orig_GetLocaleInfoEx, (void*)GetLocaleInfoEx_Hook),
         HookFunc("kernel32.dll", "CreateTimerQueueTimer", (void**)&orig_CreateTimerQueueTimer, (void*)CreateTimerQueueTimer_Hook),
         HookFunc("user32.dll", "SystemParametersInfoA", (void**)&orig_SystemParametersInfoA, (void*)SystemParametersInfoA_Hook),
-        HookFunc("user32.dll", "SystemParametersInfoW", (void**)&orig_SystemParametersInfoW, (void*)SystemParametersInfoW_Hook)
+        HookFunc("user32.dll", "SystemParametersInfoW", (void**)&orig_SystemParametersInfoW, (void*)SystemParametersInfoW_Hook),
+        HookFunc("urlmon.dll", "URLDownloadToFileA", (void**)&orig_URLDownloadToFileA, (void*)URLDownloadToFileA_Hook),
+        HookFunc("urlmon.dll", "URLDownloadToFileW", (void**)&orig_URLDownloadToFileW, (void*)URLDownloadToFileW_Hook)
 };
 
 // ================================== ここまでを編集してください！ =====================================================
