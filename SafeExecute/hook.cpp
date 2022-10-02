@@ -707,7 +707,7 @@ bool WINAPI CreateTimerQueueTimer_Hook(
     PreHook(1, "CreateTimerQueueTimer");
     
     // CreateTimerQueueTimer
-    res = MsgBox("Timer creation detected\nThis function is often used in malware to avoid being analyzed.\nIn this case, timers are used to check whether or not it is being analyzed at specified times (e.g., 1 second).\nContinue execution?");
+    res = MsgBox("Timer creation detected\nThis function is often used in malware to avoid being analyzed.\nIn this case, malware calls a callback function every time specified (e.g., 1 second) by a timer, and uses that callback function to check whether it is being analyzed or not.\nContinue execution?");
     if (res == IDNO) 
         ExitProcess(1);
     
