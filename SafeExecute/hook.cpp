@@ -24,6 +24,7 @@ std::string PathToFileName(char* path) {
 
 
 
+
 // ================================== フックを追加する場合は、ここから =====================================================
 
 // 1: WindowsAPIの関数型の定義
@@ -421,8 +422,15 @@ bool WINAPI WriteFile_Hook(
     LPOVERLAPPED lpOverlapped
 ) {
     PreHook(1, "WriteFile");
-    // TODO: interactive
-    ExitProcess(1);
+
+    char Path[300];
+    GetFinalPathNameByHandleA(hFile, Path, 300, FILE_NAME_OPENED);
+    char buf_msg[512];
+    sprintf_s(buf_msg, 512, "This executable is trying to write \" %s \" to \" %s \"\nContinue execution ? ", (const char*)lpBuffer, (const char*)Path);
+    res = MsgBox(buf_msg);
+    if (res == IDNO)
+        ExitProcess(1);
+    
     return orig_WriteFile(hFile, lpBuffer, nNumberOfBytesToWrite, lpNumberOfBytesWritten, lpOverlapped);
 }
 
