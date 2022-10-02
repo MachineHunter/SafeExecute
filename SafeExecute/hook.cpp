@@ -707,7 +707,7 @@ bool WINAPI CreateTimerQueueTimer_Hook(
     PreHook(1, "CreateTimerQueueTimer");
     
     // CreateTimerQueueTimer
-    res = MsgBox("Timer creation detected\nContinue execution?");
+    res = MsgBox("Timer creation detected\nThis function is often used in malware such as Emotet to avoid being analyzed.\nContinue execution?");
     if (res == IDNO) 
         ExitProcess(1);
     
