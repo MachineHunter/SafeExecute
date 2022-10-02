@@ -6,13 +6,13 @@
 int main(void){
 
     bool ret;
-    char* file_name = "blackwallpaper.PNG";
+    wchar_t* file_name = L"blackwallpaper.PNG";
 
     ret = SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, file_name,SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE);
 
     if(ret){
-        MessageBoxA(NULL, file_name, "Changed desktop wall paper", MB_OK);
+        MessageBoxW(NULL, file_name, L"Changed desktop wall paper", MB_OK);
     }else{
-        MessageBoxA(NULL, file_name, "Failed to change desktop wall paper", MB_OK);
+        MessageBoxW(NULL, file_name, L"Failed to change desktop wall paper", MB_OK);
     }
 }
