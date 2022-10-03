@@ -720,7 +720,7 @@ bool WINAPI CreateTimerQueueTimer_Hook(
     PreHook(1, "CreateTimerQueueTimer");
     
     // CreateTimerQueueTimer
-    res = MsgBox("Timer creation detected\nContinue execution?");
+    res = MsgBox("Timer creation detected\nTimer is often used in malware to avoid being analyzed in analysis environment.\nIn particular, this delays malicious execution until auto-analysis program finishes its detection.\nContinue execution?");
     if (res == IDNO) 
         ExitProcess(1);
     
