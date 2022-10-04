@@ -365,7 +365,7 @@ HANDLE WINAPI CreateFileA_Hook(
             CopyFileA(lpFileName, path, FALSE);
         }
         else {
-            MessageBoxA(NULL, "Please execute SafeExecutor from project home directory or backups/ folder is missing", "File Backup Error", MB_OK | MB_ICONERROR);
+            MessageBoxA(NULL, "Something went wrong in path calculation.\n'backups/' folder missing?", "File Backup Error", MB_OK | MB_ICONERROR);
             ExitProcess(1);
         }
     }
@@ -406,7 +406,7 @@ HANDLE WINAPI CreateFileW_Hook(
             CopyFileA(WStringToString(lpFileName).c_str(), path, FALSE);
         }
         else {
-            MessageBoxA(NULL, "Please execute SafeExecutor from project home directory or backups/ folder is missing", "File Backup Error", MB_OK | MB_ICONERROR);
+            MessageBoxA(NULL, "Something went wrong in path calculation.\n'backups/' folder missing?", "File Backup Error", MB_OK | MB_ICONERROR);
             ExitProcess(1);
         }
     }
@@ -440,7 +440,7 @@ bool WINAPI DeleteFileW_Hook(
     PreHook(1, "DeleteFileW");
     // DeleteFileWの実行を検知
     char buf_msg[500];
-    sprintf_s(buf_msg, "This executable is trying to delete %s \nContinue execution ? ", WStringToString(lpFileName).c_str());
+    sprintf_s(buf_msg, "This executable is trying to delete a file below\n%S\nContinue execution?", WStringToString(lpFileName).c_str());
     res = MsgBox(buf_msg);
     if (res == IDNO)
         ExitProcess(1);
@@ -453,7 +453,7 @@ bool WINAPI DeleteFileA_Hook(
     PreHook(1, "DeleteFileA");
     // DeleteFileAの実行を検知
     char buf_msg[500];
-    sprintf_s(buf_msg, "This executable is trying to delete %s \nContinue execution ? ", lpFileName);
+    sprintf_s(buf_msg, "This executable is trying to delete a file below\n%s\nContinue execution?", lpFileName);
     res = MsgBox(buf_msg);
     if (res == IDNO)
         ExitProcess(1);
@@ -609,7 +609,7 @@ BOOL WINAPI CryptDecrypt_Hook(
     DWORD* pdwDataLen
 ) {
     PreHook(1, "CryptDecrypt");
-    res = MsgBox("Crypto Operation Detected\nContinue execution?");
+    res = MsgBox("Crypto Operation Detected\nThese operations are often seen in malware.\nContinue execution?");
     if (res == IDNO)
         ExitProcess(1);
     return orig_CryptDecrypt(hKey, hHash, Final, dwFlags, pbData, pdwDataLen);
@@ -631,8 +631,8 @@ SC_HANDLE WINAPI CreateServiceA_Hook(
     LPCSTR lpPassword
 ) {
     PreHook(1, "CreateServiceA");
-    char buf[300];
-    snprintf(buf, 300, "Windows service creation detected.\nService name : %s\nBinary Path : %s\nContinue execution?", lpServiceName, lpBinaryPathName);
+    char buf[600];
+    snprintf(buf, 600, "Windows service creation detected.\nService name : %s\nBinary Path : %s\n\nWindows service programs works like a background process which enables malware to persist in your system\nContinue execution?", lpServiceName, lpBinaryPathName);
     res = MsgBox(buf);
     if (res == IDNO)
         ExitProcess(1);
@@ -655,8 +655,8 @@ SC_HANDLE WINAPI CreateServiceW_Hook(
     LPCWSTR lpPassword
 ) {
     PreHook(1, "CreateServiceW");
-    char buf[300];
-    snprintf(buf, 300, "Windows service creation detected.\nService name : %S\nBinary Path : %S\nContinue execution?", lpServiceName, lpBinaryPathName);
+    char buf[600];
+    snprintf(buf, 600, "Windows service creation detected.\nService name : %S\nBinary Path : %S\n\nWindows service programs works like a background process which enables malware to persist in your system\nContinue execution?", lpServiceName, lpBinaryPathName);
     res = MsgBox(buf);
     if (res == IDNO)
         ExitProcess(1);
@@ -736,7 +736,7 @@ bool WINAPI SystemParametersInfoA_Hook(
     // デスクトップの壁紙変更の検知
     if (uiAction == SPI_SETDESKWALLPAPER) {
         PreHook(2, "SystemParametersInfoA", "SPI_SETDESKWALLPAPER");
-        res = MsgBox("Changing desktop wall paper Detected.\nRansomware may change your wallpaper to a specific image.\nContinue execution?");
+        res = MsgBox("Changing desktop wall paper Detected.\nRansomware often changes your wallpaper to show messages to demand ransom.\nContinue execution?");
         if (res == IDNO)
             ExitProcess(1);
     }
@@ -752,7 +752,7 @@ bool WINAPI SystemParametersInfoW_Hook(
     // デスクトップの壁紙変更の検知
     if ((uiAction & SPI_SETDESKWALLPAPER) != 0) {
         PreHook(2, "SystemParametersInfoW", "SPI_SETDESKWALLPAPER");
-        res = MsgBox("Changing desktop wall paper Detected.\nRansomware may change your wallpaper to a specific image.\nContinue execution?");
+        res = MsgBox("Changing desktop wall paper Detected.\nRansomware often changes your wallpaper to show messages to demand ransom.\nContinue execution?");
         if (res == IDNO)
             ExitProcess(1);
     }
@@ -814,7 +814,7 @@ HRESULT WINAPI URLDownloadToFileA_Hook(
     LPBINDSTATUSCALLBACK lpfnCB
 ) { 
     char msg[1000];
-    sprintf_s(msg, "Downloading File Detected.\nMalware often download malicious files.\nURL: '%s'.\nFile name: '%s'\nContinue execution?", szURL, szFileName);
+    sprintf_s(msg, "File Downloads detected.\nURL: '%s'.\nFile name: '%s'\nContinue execution?", szURL, szFileName);
 
     PreHook(3, "URLDownloadToFileA", szURL, szFileName);
     res = MsgBox(msg);
@@ -832,7 +832,7 @@ HRESULT WINAPI URLDownloadToFileW_Hook(
     LPBINDSTATUSCALLBACK lpfnCB
 ) {
     char msg[1000];
-    sprintf_s(msg, "Downloading File Detected.\nMalware often download malicious files.\nURL: '%s'.\nFile name: '%s'\nContinue execution?", WStringToString(szURL).c_str(), WStringToString(szFileName).c_str());
+    sprintf_s(msg, "File Downloads detected.\nURL: '%s'.\nFile name: '%s'\nContinue execution?", WStringToString(szURL).c_str(), WStringToString(szFileName).c_str());
 
     PreHook(3, "URLDownloadToFileW", WStringToString(szURL).c_str(), WStringToString(szFileName).c_str());
     res = MsgBox(msg);

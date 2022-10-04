@@ -658,7 +658,7 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 			}
 			pProc->WaitForExit();
 		}
-		else MessageBox::Show("Something went wrong in Path Calculation", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+		else MessageBox::Show("Something went wrong in path calculation", "SafeExecutorGUI Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 		return;
 	}
 }
