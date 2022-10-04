@@ -27,7 +27,7 @@ void LogHookedApi(int argc, VCHAR argv) {
 
 		char buf[1000];
 		memset(buf, 0, 1000);
-		snprintf(buf, 1000, "%04d/%02d/%02d %02d:%02d:%02d.%d,%s,%s",
+		snprintf(buf, 1000, "%04d/%02d/%02d_%02d:%02d:%02d.%d,%s,%s",
 			time.wYear, time.wMonth, time.wDay,
 			time.wHour, time.wMinute, time.wSecond, time.wMilliseconds,
 			processPath, argv[0]);

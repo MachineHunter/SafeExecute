@@ -636,6 +636,7 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 			pProc->StartInfo->FileName = gcnew String(executorPath);
 			pProc->StartInfo->Arguments = gcnew String(arg);
 			pProc->StartInfo->UseShellExecute = false;
+			pProc->StartInfo->CreateNoWindow = true;
 			pProc->StartInfo->RedirectStandardOutput = true;
 			pProc->StartInfo->RedirectStandardError = true;
 			// pProc->StartInfo->RedirectStandardInput = true;
