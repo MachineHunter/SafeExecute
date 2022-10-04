@@ -17,11 +17,11 @@ void ReadMode() {
 			f.read(mode, 1);
 			MODE = atoi(mode);
 		}
-		else MessageBoxA(NULL, "Please create mode.txt in rules directory", "ReadMode Error", MB_OK | MB_ICONERROR);
+		else MessageBoxA(NULL, "Missing mode.txt in rules/ directory", "ReadMode Error", MB_OK | MB_ICONERROR);
 
 	}
 	else {
-		MessageBoxA(NULL, "Please execute SafeExecutor from project home directory", "ReadMode Error", MB_OK | MB_ICONERROR);
+		MessageBoxA(NULL, "rules/ directory missing", "ReadMode Error", MB_OK | MB_ICONERROR);
 		ExitProcess(1);
 	}
 }

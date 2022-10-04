@@ -636,6 +636,7 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 			pProc->StartInfo->FileName = gcnew String(executorPath);
 			pProc->StartInfo->Arguments = gcnew String(arg);
 			pProc->StartInfo->UseShellExecute = false;
+			pProc->StartInfo->CreateNoWindow = true;
 			pProc->StartInfo->RedirectStandardOutput = true;
 			pProc->StartInfo->RedirectStandardError = true;
 			// pProc->StartInfo->RedirectStandardInput = true;
@@ -657,7 +658,7 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 			}
 			pProc->WaitForExit();
 		}
-		else MessageBox::Show("Something went wrong in Path Calculation", "Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
+		else MessageBox::Show("Something went wrong in path calculation", "SafeExecutorGUI Error", MessageBoxButtons::OK, MessageBoxIcon::Error);
 		return;
 	}
 }
