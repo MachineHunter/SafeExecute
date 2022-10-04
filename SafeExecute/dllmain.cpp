@@ -4,9 +4,14 @@
 #include "readmode.h"
 
 char processPath[MAX_PATH];
+char processDir[MAX_PATH];
 
 DWORD WINAPI ThreadMain(LPVOID params) {
     GetModuleFileNameA(NULL, processPath, MAX_PATH);
+    strcpy_s(processDir, processPath);
+    PathRemoveFileSpecA(processDir);
+    strcat_s(processDir, "\\");
+
     ReadMode();
     ReadCheckList();
     Hook();

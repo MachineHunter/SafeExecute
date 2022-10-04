@@ -22,6 +22,34 @@ std::string PathToFileName(char* path) {
     return strFileName;
 }
 
+bool IsSafeExecuteFilesA(LPSTR lpFileName) {
+    char fullPath[MAX_PATH];
+    GetFullPathNameA(lpFileName, MAX_PATH, fullPath, NULL);
+
+    string strFullPath(fullPath);
+    string safeExecutePath(processDir);
+    transform(strFullPath.begin(), strFullPath.end(), strFullPath.begin(), ::toupper);
+    transform(safeExecutePath.begin(), safeExecutePath.end(), safeExecutePath.begin(), ::toupper);
+
+    if (strFullPath.find(safeExecutePath) != std::string::npos)
+        return true;
+    return false;
+}
+
+bool IsSafeExecuteFilesW(LPWSTR lpFileName) {
+    char fullPath[MAX_PATH];
+    GetFullPathNameA(WStringToString(lpFileName).c_str(), MAX_PATH, fullPath, NULL);
+
+    string strFullPath(fullPath);
+    string safeExecutePath(processDir);
+    transform(strFullPath.begin(), strFullPath.end(), strFullPath.begin(), ::toupper);
+    transform(safeExecutePath.begin(), safeExecutePath.end(), safeExecutePath.begin(), ::toupper);
+
+    if (strFullPath.find(safeExecutePath) != std::string::npos)
+        return true;
+    return false;
+}
+
 
 
 
@@ -341,6 +369,12 @@ HANDLE WINAPI CreateFileA_Hook(
     DWORD dwFlagsAndAttributes,
     HANDLE hTemplateFile
 ) {
+    if (IsSafeExecuteFilesA((LPSTR)lpFileName)) {
+        res = MsgBox("This executable tried to open SafeExecute's files.\nSafeExecute's files contain backups files which should not be modified\nContinue execution? (No recommended)");
+        if (res == IDNO)
+            ExitProcess(1);
+    }
+
     if (dwCreationDisposition == OPEN_ALWAYS || dwCreationDisposition == OPEN_EXISTING) {
         string strFileName;
         strFileName = PathToFileName((LPSTR)lpFileName);
@@ -382,6 +416,12 @@ HANDLE WINAPI CreateFileW_Hook(
     DWORD dwFlagsAndAttributes,
     HANDLE hTemplateFile
 ) {
+    if (IsSafeExecuteFilesW((LPWSTR)lpFileName)) {
+        res = MsgBox("This executable tried to open SafeExecute's files.\nSafeExecute's files contain backups files which should not be modified\nContinue execution? (No recommended)");
+        if (res == IDNO)
+            ExitProcess(1);
+    }
+
     if (dwCreationDisposition == OPEN_ALWAYS || dwCreationDisposition == OPEN_EXISTING) {
         string strFileName;
         strFileName = PathToFileName((LPSTR)WStringToString(lpFileName).c_str());

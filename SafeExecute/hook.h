@@ -9,12 +9,14 @@
 #include <processthreadsapi.h>
 #include <wininet.h>
 #include <atlstr.h>
+#include <algorithm>
 #pragma comment(lib, "Dbghelp")
 #pragma comment(lib, "crypt32.lib")
 
 #define MsgBox(X) MessageBoxA(NULL, X, "SafeExecute", MB_YESNO)
 
 extern char processPath[MAX_PATH];
+extern char processDir[MAX_PATH];
 extern bool CreateProcessChecked;
 
 typedef struct HookFunc {
@@ -53,3 +55,5 @@ void Hook();
 
 std::string WStringToString(const std::wstring& s);
 std::string PathToFileName(char* path);
+bool IsSafeExecuteFilesA(LPSTR lpFileName);
+bool IsSafeExecuteFilesW(LPWSTR lpFileName);
