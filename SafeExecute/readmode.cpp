@@ -5,7 +5,8 @@ DWORD MODE = MODE_NORMAL;
 
 void ReadMode() {
 	char path[MAX_PATH];
-	GetCurrentDirectoryA(MAX_PATH, path);
+	GetModuleFileNameA(GetModuleHandleA("SafeExecute.dll"), path, MAX_PATH);
+	PathRemoveFileSpecA(path);
 	strcat_s(path, "\\rules");
 	
 	if (PathFileExistsA(path)) {

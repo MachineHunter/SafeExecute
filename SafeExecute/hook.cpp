@@ -27,7 +27,7 @@ bool IsSafeExecuteFilesA(LPSTR lpFileName) {
     GetFullPathNameA(lpFileName, MAX_PATH, fullPath, NULL);
 
     string strFullPath(fullPath);
-    string safeExecutePath(processDir);
+    string safeExecutePath(dllDir);
     transform(strFullPath.begin(), strFullPath.end(), strFullPath.begin(), ::toupper);
     transform(safeExecutePath.begin(), safeExecutePath.end(), safeExecutePath.begin(), ::toupper);
 
@@ -41,7 +41,7 @@ bool IsSafeExecuteFilesW(LPWSTR lpFileName) {
     GetFullPathNameA(WStringToString(lpFileName).c_str(), MAX_PATH, fullPath, NULL);
 
     string strFullPath(fullPath);
-    string safeExecutePath(processDir);
+    string safeExecutePath(dllDir);
     transform(strFullPath.begin(), strFullPath.end(), strFullPath.begin(), ::toupper);
     transform(safeExecutePath.begin(), safeExecutePath.end(), safeExecutePath.begin(), ::toupper);
 
@@ -201,7 +201,7 @@ bool WINAPI CreateProcessA_Hook(
         if (res == IDNO)
             ExitProcess(1);
     }
-
+    
     BOOL suspended = ((dwCreationFlags & CREATE_SUSPENDED) != 0);
     dwCreationFlags |= CREATE_SUSPENDED;
     BOOL res2 = orig_CreateProcessA(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
@@ -209,11 +209,11 @@ bool WINAPI CreateProcessA_Hook(
     // inject SafeExecute.dll to child process
     FARPROC lib = GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
     char dllpath[MAX_PATH];
-    GetModuleFileNameA(GetModuleHandleA("SafeExecute.dll"), dllpath, MAX_PATH);    
+    GetModuleFileNameA(GetModuleHandleA("SafeExecute.dll"), dllpath, MAX_PATH);
     size_t dllpathSize = strlen(dllpath);
     LPVOID allocMem = VirtualAllocEx(lpProcessInformation->hProcess, NULL, dllpathSize, MEM_COMMIT, PAGE_READWRITE);
-    WriteProcessMemory(lpProcessInformation->hProcess, allocMem, dllpath, dllpathSize, NULL);
-    CreateRemoteThread(lpProcessInformation->hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)lib, allocMem, 0, NULL);
+    DWORD a = WriteProcessMemory(lpProcessInformation->hProcess, allocMem, dllpath, dllpathSize, NULL);
+    HANDLE b = CreateRemoteThread(lpProcessInformation->hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)lib, allocMem, 0, NULL);
     Sleep(200);
 
     if (!suspended)
@@ -380,8 +380,8 @@ HANDLE WINAPI CreateFileA_Hook(
         strFileName = PathToFileName((LPSTR)lpFileName);
 
         char path[MAX_PATH];
-        GetCurrentDirectoryA(MAX_PATH, path);
-        strcat_s(path, "\\backups\\");
+        strcpy_s(path, dllDir);
+        strcat_s(path, "backups\\");
 
         if (PathFileExistsA(path)) {
             char buf[50];
@@ -427,8 +427,8 @@ HANDLE WINAPI CreateFileW_Hook(
         strFileName = PathToFileName((LPSTR)WStringToString(lpFileName).c_str());
 
         char path[MAX_PATH];
-        GetCurrentDirectoryA(MAX_PATH, path);
-        strcat_s(path, "\\backups\\");
+        strcpy_s(path, dllDir);
+        strcat_s(path, "backups\\");
 
         if (PathFileExistsA(path)) {
             char buf[50];

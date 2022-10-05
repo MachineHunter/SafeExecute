@@ -16,7 +16,7 @@
 #define MsgBox(X) MessageBoxA(NULL, X, "SafeExecute", MB_YESNO)
 
 extern char processPath[MAX_PATH];
-extern char processDir[MAX_PATH];
+extern char dllDir[MAX_PATH];
 extern bool CreateProcessChecked;
 
 typedef struct HookFunc {
