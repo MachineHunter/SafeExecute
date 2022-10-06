@@ -9,8 +9,7 @@ bool IsNumber(const string& s) {
 
 void ReadCheckList() {
 	char path[MAX_PATH];
-	GetModuleFileNameA(GetModuleHandleA("SafeExecute.dll"), path, MAX_PATH);
-	PathRemoveFileSpecA(path);
+	strcpy_s(path, localDir);
 	strcat_s(path, "\\rules");
 
 	if (PathFileExistsA(path)) {

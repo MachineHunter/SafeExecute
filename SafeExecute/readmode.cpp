@@ -5,9 +5,8 @@ DWORD MODE = MODE_NORMAL;
 
 void ReadMode() {
 	char path[MAX_PATH];
-	GetModuleFileNameA(GetModuleHandleA("SafeExecute.dll"), path, MAX_PATH);
-	PathRemoveFileSpecA(path);
-	strcat_s(path, "\\rules");
+	ExpandEnvironmentStringsA("%LOCALAPPDATA%", path, MAX_PATH);
+	strcat_s(path, "\\à¿ëSé¿çséòÅ`â¥ÇêMÇ∂ÇÎÅ`\\rules");
 	
 	if (PathFileExistsA(path)) {
 		strcat_s(path, "\\mode.txt");

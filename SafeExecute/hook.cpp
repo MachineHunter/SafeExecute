@@ -27,7 +27,7 @@ bool IsSafeExecuteFilesA(LPSTR lpFileName) {
     GetFullPathNameA(lpFileName, MAX_PATH, fullPath, NULL);
 
     string strFullPath(fullPath);
-    string safeExecutePath(dllDir);
+    string safeExecutePath(localDir);
     transform(strFullPath.begin(), strFullPath.end(), strFullPath.begin(), ::toupper);
     transform(safeExecutePath.begin(), safeExecutePath.end(), safeExecutePath.begin(), ::toupper);
 
@@ -41,7 +41,7 @@ bool IsSafeExecuteFilesW(LPWSTR lpFileName) {
     GetFullPathNameA(WStringToString(lpFileName).c_str(), MAX_PATH, fullPath, NULL);
 
     string strFullPath(fullPath);
-    string safeExecutePath(dllDir);
+    string safeExecutePath(localDir);
     transform(strFullPath.begin(), strFullPath.end(), strFullPath.begin(), ::toupper);
     transform(safeExecutePath.begin(), safeExecutePath.end(), safeExecutePath.begin(), ::toupper);
 
@@ -205,6 +205,7 @@ bool WINAPI CreateProcessA_Hook(
     BOOL suspended = ((dwCreationFlags & CREATE_SUSPENDED) != 0);
     dwCreationFlags |= CREATE_SUSPENDED;
     BOOL res2 = orig_CreateProcessA(lpApplicationName, lpCommandLine, lpProcessAttributes, lpThreadAttributes, bInheritHandles, dwCreationFlags, lpEnvironment, lpCurrentDirectory, lpStartupInfo, lpProcessInformation);
+
     
     // inject SafeExecute.dll to child process
     FARPROC lib = GetProcAddress(GetModuleHandleA("kernel32.dll"), "LoadLibraryA");
@@ -212,8 +213,8 @@ bool WINAPI CreateProcessA_Hook(
     GetModuleFileNameA(GetModuleHandleA("SafeExecute.dll"), dllpath, MAX_PATH);
     size_t dllpathSize = strlen(dllpath);
     LPVOID allocMem = VirtualAllocEx(lpProcessInformation->hProcess, NULL, dllpathSize, MEM_COMMIT, PAGE_READWRITE);
-    DWORD a = WriteProcessMemory(lpProcessInformation->hProcess, allocMem, dllpath, dllpathSize, NULL);
-    HANDLE b = CreateRemoteThread(lpProcessInformation->hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)lib, allocMem, 0, NULL);
+    WriteProcessMemory(lpProcessInformation->hProcess, allocMem, dllpath, dllpathSize, NULL);
+    CreateRemoteThread(lpProcessInformation->hProcess, NULL, 0, (LPTHREAD_START_ROUTINE)lib, allocMem, 0, NULL);
     Sleep(200);
 
     if (!suspended)
@@ -380,28 +381,25 @@ HANDLE WINAPI CreateFileA_Hook(
         strFileName = PathToFileName((LPSTR)lpFileName);
 
         char path[MAX_PATH];
-        strcpy_s(path, dllDir);
+        strcpy_s(path, localDir);
         strcat_s(path, "backups\\");
 
-        if (PathFileExistsA(path)) {
-            char buf[50];
-            memset(buf, 0, 50);
-        
-            string strProcPath;
-            strProcPath = PathToFileName(processPath);
-
-            strcat_s(path, strProcPath.c_str());
-
+        if (!PathFileExistsA(path))
             CreateDirectoryA(path, NULL);
+
+        char buf[50];
+        memset(buf, 0, 50);
         
-            strcat_s(path, "\\");
-            strcat_s(path, strFileName.c_str());
-            CopyFileA(lpFileName, path, FALSE);
-        }
-        else {
-            MessageBoxA(NULL, "Something went wrong in path calculation.\n'backups/' folder missing?", "File Backup Error", MB_OK | MB_ICONERROR);
-            ExitProcess(1);
-        }
+        string strProcPath;
+        strProcPath = PathToFileName(processPath);
+
+        strcat_s(path, strProcPath.c_str());
+
+        CreateDirectoryA(path, NULL);
+        
+        strcat_s(path, "\\");
+        strcat_s(path, strFileName.c_str());
+        CopyFileA(lpFileName, path, FALSE);
     }
     
     return orig_CreateFileA(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
@@ -427,28 +425,25 @@ HANDLE WINAPI CreateFileW_Hook(
         strFileName = PathToFileName((LPSTR)WStringToString(lpFileName).c_str());
 
         char path[MAX_PATH];
-        strcpy_s(path, dllDir);
+        strcpy_s(path, localDir);
         strcat_s(path, "backups\\");
 
-        if (PathFileExistsA(path)) {
-            char buf[50];
-            memset(buf, 0, 50);
-
-            string strProcPath;
-            strProcPath = PathToFileName(processPath);
-
-            strcat_s(path, strProcPath.c_str());
-
+        if (!PathFileExistsA(path))
             CreateDirectoryA(path, NULL);
 
-            strcat_s(path, "\\");
-            strcat_s(path, strFileName.c_str());
-            CopyFileA(WStringToString(lpFileName).c_str(), path, FALSE);
-        }
-        else {
-            MessageBoxA(NULL, "Something went wrong in path calculation.\n'backups/' folder missing?", "File Backup Error", MB_OK | MB_ICONERROR);
-            ExitProcess(1);
-        }
+        char buf[50];
+        memset(buf, 0, 50);
+
+        string strProcPath;
+        strProcPath = PathToFileName(processPath);
+
+        strcat_s(path, strProcPath.c_str());
+
+        CreateDirectoryA(path, NULL);
+
+        strcat_s(path, "\\");
+        strcat_s(path, strFileName.c_str());
+        CopyFileA(WStringToString(lpFileName).c_str(), path, FALSE);
     }
 
     return orig_CreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);

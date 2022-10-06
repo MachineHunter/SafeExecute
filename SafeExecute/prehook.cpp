@@ -3,49 +3,45 @@
 
 void LogHookedApi(int argc, VCHAR argv) {
 	char path[MAX_PATH];
-	GetModuleFileNameA(GetModuleHandleA("SafeExecute.dll"), path, MAX_PATH);
-	PathRemoveFileSpecA(path);
-	strcat_s(path, "\\logs");
+	ExpandEnvironmentStringsA("%LOCALAPPDATA%", path, MAX_PATH);
+	strcat_s(path, "\\à¿ëSé¿çséòÅ`â¥ÇêMÇ∂ÇÎÅ`\\logs");
 
+	if (!PathFileExistsA(path))
+		CreateDirectoryA(path, NULL);
+
+	strcat_s(path, "\\log.csv");
+
+	HANDLE hFile;
+	DWORD writesize;
 	if (PathFileExistsA(path)) {
-		strcat_s(path, "\\log.csv");
-
-		HANDLE hFile;
-		DWORD writesize;
-		if (PathFileExistsA(path)) {
-			hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-		}
-		else {
-			hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
-			char header[] = "timestamp,executable path,hooked windows api,args\n";
-			WriteFile(hFile, header, strlen(header), &writesize, NULL);
-		}
-
-		SetFilePointer(hFile, 0, NULL, FILE_END);
-
-		SYSTEMTIME time;
-		GetLocalTime(&time);
-
-		char buf[1000];
-		memset(buf, 0, 1000);
-		snprintf(buf, 1000, "%04d/%02d/%02d_%02d:%02d:%02d.%d,%s,%s",
-			time.wYear, time.wMonth, time.wDay,
-			time.wHour, time.wMinute, time.wSecond, time.wMilliseconds,
-			processPath, argv[0]);
-		for (int i = 1; i < argc; i++) {
-			strcat_s(buf, ",");
-			strcat_s(buf, argv[i]);
-		}
-		strcat_s(buf, "\n");
-
-		WriteFile(hFile, buf, strlen(buf), &writesize, NULL);
-		CloseHandle(hFile);
-		return;
+		hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	}
 	else {
-		MessageBoxA(NULL, "Please execute SafeExecutor from project home directory", "PreHook Error", MB_OK | MB_ICONERROR);
-		ExitProcess(1);
+		hFile = CreateFileA(path, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+		char header[] = "timestamp,executable path,hooked windows api,args\n";
+		WriteFile(hFile, header, strlen(header), &writesize, NULL);
 	}
+
+	SetFilePointer(hFile, 0, NULL, FILE_END);
+
+	SYSTEMTIME time;
+	GetLocalTime(&time);
+
+	char buf[1000];
+	memset(buf, 0, 1000);
+	snprintf(buf, 1000, "%04d/%02d/%02d_%02d:%02d:%02d.%d,%s,%s",
+		time.wYear, time.wMonth, time.wDay,
+		time.wHour, time.wMinute, time.wSecond, time.wMilliseconds,
+		processPath, argv[0]);
+	for (int i = 1; i < argc; i++) {
+		strcat_s(buf, ",");
+		strcat_s(buf, argv[i]);
+	}
+	strcat_s(buf, "\n");
+
+	WriteFile(hFile, buf, strlen(buf), &writesize, NULL);
+	CloseHandle(hFile);
+	return;
 }
 
 void PreHook(int argc, ...) {
