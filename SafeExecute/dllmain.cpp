@@ -7,12 +7,9 @@ char processPath[MAX_PATH];
 char localDir[MAX_PATH];
 
 DWORD WINAPI ThreadMain(LPVOID params) {
-    MessageBoxA(NULL, "ThreadMain", "debug", MB_OK);
     GetModuleFileNameA(NULL, processPath, MAX_PATH);
-    MessageBoxA(NULL, "getmodulefilename after", "debug", MB_OK);
     ExpandEnvironmentStringsA("%LOCALAPPDATA%", localDir, MAX_PATH);
-    MessageBoxA(NULL, localDir, "debug", MB_OK);
-    strcat_s(localDir, "\\安全実行侍～俺を信じろ～\\");
+    strcat_s(localDir, "\\安全実行侍～俺を信じろ～");
 
     ReadMode();
     ReadCheckList();

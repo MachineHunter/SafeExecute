@@ -23,9 +23,9 @@ namespace SafeExecutorGUI {
 	typedef System::Collections::Generic::Queue<TreeNode^> NodeQueue;
 	typedef System::Collections::Generic::List<String^> StrList;
 
-	char localPath[MAX_PATH];
-	char thisDir[MAX_PATH];
-	char binDir[MAX_PATH];
+	char appDir[MAX_PATH];
+	char localDir[MAX_PATH];
+
 	/// <summary>
 	/// MainWindow の概要
 	/// </summary>
@@ -36,52 +36,15 @@ namespace SafeExecutorGUI {
 		{
 			InitializeComponent();
 			
-			// パスの初期化 =================================================================
-			// - localPath: AppData\Local\安全実行侍～俺を信じろ～
-			marshal_context^ con = gcnew marshal_context();
-			String^ localPathStr = Environment::GetFolderPath(Environment::SpecialFolder::LocalApplicationData);
-			
-			const char* temp = con->marshal_as<const char*>(localPathStr);
-			strcpy_s(localPath, temp);
-			strcat_s(localPath, "\\安全実行侍～俺を信じろ～");
-			if (!PathFileExistsA(localPath))
-				CreateDirectoryA(localPath, NULL);
-			strcpy_s(binDir, localPath);
-			MessageBox::Show(gcnew String(localPath));
+			// appDir: GUIの実行ファイルがあるディレクトリへのパス
+			GetModuleFileNameA(NULL, appDir, MAX_PATH);
+			PathRemoveFileSpecA(appDir);
 
-			// - binDir: AppData\Local\安全実行侍～俺を信じろ～\bin
-			strcat_s(binDir, "\\bin");
-			if (!PathFileExistsA(binDir))
-				CreateDirectoryA(binDir, NULL);
-			MessageBox::Show(gcnew String(binDir));
-
-			// - thisDir: このGUIのバイナリがあるディレクトリ
-			String^ thisPath = Reflection::Assembly::GetExecutingAssembly()->Location;
-			int idx = thisPath->LastIndexOf("\\");
-			thisPath = thisPath->Substring(0, idx);
-			temp = con->marshal_as<const char*>(thisPath);
-			strcpy_s(thisDir, temp);
-			MessageBox::Show(gcnew String(thisDir));
-
-			// MSIX用にファイルをコピー
-			char srcBuf[MAX_PATH*2];
-			char dstBuf[MAX_PATH*2];
-			strcpy_s(srcBuf, thisDir);
-			strcat_s(srcBuf, "\\SafeExecutor.exe");
-			strcpy_s(dstBuf, binDir);
-			strcat_s(dstBuf, "\\SafeExecutor.exe");
-			CopyFileA(srcBuf, dstBuf, false);
-			
-			memset(srcBuf, 0, MAX_PATH);
-			memset(dstBuf, 0, MAX_PATH);
-
-			strcpy_s(srcBuf, thisDir);
-			strcat_s(srcBuf, "\\SafeExecute.dll");
-			strcpy_s(dstBuf, binDir);
-			strcat_s(dstBuf, "\\SafeExecute.dll");
-			CopyFileA(srcBuf, dstBuf, false);
-
-			// ==============================================================================
+			// localPath: C:\Users\ユーザー名\Appdata\Local\安全実行侍～俺を信じろ～
+			ExpandEnvironmentStringsA("%LOCALAPPDATA%", localDir, MAX_PATH);
+			strcat_s(localDir, "\\安全実行侍～俺を信じろ～");
+			if (!PathFileExistsA(localDir))
+				CreateDirectoryA(localDir, NULL);
 
 			array<TreeNode^>^ nodChildFiles = {
 				gcnew TreeNode("ファイル名変更"),
@@ -575,21 +538,19 @@ namespace SafeExecutorGUI {
 private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e) {
 	// 実行ボタンを押したときの処理を記述する
 	
-	char path[MAX_PATH*2];
-	memset(path, 0, MAX_PATH * 2);
-	strcat_s(path, localPath);
-	strcat_s(path, "\\rules"); //ここまでで"path"\\rulesができる．
+	char path[MAX_PATH];
+	memset(path, 0, MAX_PATH);
+	strcat_s(path, localDir);
+	strcat_s(path, "\\rules"); // path = localDir/rules/
+	if (!PathFileExistsA(path))
+		CreateDirectoryA(path, NULL);
+	
 	char rulesPath[MAX_PATH];
 	char modePath[MAX_PATH];
 	strcpy_s(rulesPath, path);
 	strcpy_s(modePath, path);
-	
-	MessageBox::Show(gcnew String(path));
-	if (!PathFileExistsA(path))
-		CreateDirectoryA(path, NULL);
-	
-	strcat_s(rulesPath, "\\rules.csv"); //これでrulesPathがcsvファイルのパスを指す
-	strcat_s(modePath, "\\mode.txt"); //これでmodePathがtxtファイルのパスを指す
+	strcat_s(rulesPath, "\\rules.csv"); // rulesPath = localDir/rules/rules.csv
+	strcat_s(modePath, "\\mode.txt");   // modePath  = localDir/rules/mode.txt
 
 	HANDLE hFileRule;
 	HANDLE hFileMode;
@@ -597,8 +558,6 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 	ApiDict^ ad = gcnew ApiDict();
 
 	// rules.csvまたはmode.txtファイルが存在するなら一度消す
-	MessageBox::Show(gcnew String(rulesPath));
-	MessageBox::Show(gcnew String(modePath));
 	if (PathFileExistsA(rulesPath))
 		DeleteFileA(rulesPath);
 	if (PathFileExistsA(modePath))
@@ -664,11 +623,11 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 	exePathForCheck[strlen(exePathForCheck)-1] = '\0';
 	
 	if (PathFileExistsA(exePathForCheck)) {
-		// SetCurrentDirectoryA(thisDir);
 		char executorPath[MAX_PATH];
-		snprintf(executorPath, MAX_PATH, "%s\\%s", binDir, "SafeExecutor.exe");
+		snprintf(executorPath, MAX_PATH, "%s\\%s", appDir, "SafeExecutor.exe");
 		char dllPath[MAX_PATH];
-		snprintf(dllPath, MAX_PATH, "\"%s\\%s\"", binDir, "SafeExecute.dll");
+		snprintf(dllPath, MAX_PATH, "\"%s\\%s\"", appDir, "SafeExecute.dll");
+		
 		char dllPathForCheck[MAX_PATH];
 		strcpy_s(dllPathForCheck, dllPath + 1);
 		dllPathForCheck[strlen(dllPathForCheck) - 1] = '\0';
@@ -687,8 +646,6 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 			}
 			
 			Process^ pProc = gcnew Process();
-			MessageBox::Show(gcnew String(executorPath));
-			MessageBox::Show(gcnew String(arg));
 			pProc->StartInfo->FileName = gcnew String(executorPath);
 			pProc->StartInfo->Arguments = gcnew String(arg);
 			pProc->StartInfo->UseShellExecute = false;
@@ -697,8 +654,7 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 			pProc->StartInfo->RedirectStandardError = true;
 			// pProc->StartInfo->RedirectStandardInput = true;
 			pProc->Start();
-
-			MessageBox::Show(pProc->ProcessName);
+			
 			String^ stdOut = "";
 			String^ stdErr = "";
 			while (!pProc->HasExited) {
