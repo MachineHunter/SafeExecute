@@ -23,6 +23,9 @@ namespace SafeExecutorGUI {
 	typedef System::Collections::Generic::Queue<TreeNode^> NodeQueue;
 	typedef System::Collections::Generic::List<String^> StrList;
 
+	char appDir[MAX_PATH];
+	char localDir[MAX_PATH];
+
 	/// <summary>
 	/// MainWindow の概要
 	/// </summary>
@@ -33,6 +36,16 @@ namespace SafeExecutorGUI {
 		{
 			InitializeComponent();
 			
+			// appDir: GUIの実行ファイルがあるディレクトリへのパス
+			GetModuleFileNameA(NULL, appDir, MAX_PATH);
+			PathRemoveFileSpecA(appDir);
+
+			// localPath: C:\Users\ユーザー名\Appdata\Local\安全実行侍～俺を信じろ～
+			ExpandEnvironmentStringsA("%LOCALAPPDATA%", localDir, MAX_PATH);
+			strcat_s(localDir, "\\安全実行侍～俺を信じろ～");
+			if (!PathFileExistsA(localDir))
+				CreateDirectoryA(localDir, NULL);
+
 			array<TreeNode^>^ nodChildFiles = {
 				gcnew TreeNode("ファイル名変更"),
 				gcnew TreeNode("ファイル削除"),
@@ -525,101 +538,101 @@ namespace SafeExecutorGUI {
 private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e) {
 	// 実行ボタンを押したときの処理を記述する
 	
-	// TODO: 
 	char path[MAX_PATH];
-	GetModuleFileNameA(NULL, path, MAX_PATH);
-	for (int i = 0; i < 4; i++) PathRemoveFileSpecA(path);
-	strcat_s(path, "\\rules"); //ここまでで"path"\\rulesができる．
-
+	memset(path, 0, MAX_PATH);
+	strcat_s(path, localDir);
+	strcat_s(path, "\\rules"); // path = localDir/rules/
+	if (!PathFileExistsA(path))
+		CreateDirectoryA(path, NULL);
+	
 	char rulesPath[MAX_PATH];
 	char modePath[MAX_PATH];
 	strcpy_s(rulesPath, path);
 	strcpy_s(modePath, path);
+	strcat_s(rulesPath, "\\rules.csv"); // rulesPath = localDir/rules/rules.csv
+	strcat_s(modePath, "\\mode.txt");   // modePath  = localDir/rules/mode.txt
 
-	if (PathFileExistsA(rulesPath)) {
-		strcat_s(rulesPath, "\\rules.csv"); //これでrulesPathがcsvファイルのパスを指す
-		strcat_s(modePath, "\\mode.txt"); //これでmodePathがtxtファイルのパスを指す
+	HANDLE hFileRule;
+	HANDLE hFileMode;
+	DWORD writesize;
+	ApiDict^ ad = gcnew ApiDict();
 
-		HANDLE hFileRule;
-		HANDLE hFileMode;
-		DWORD writesize;
-		ApiDict^ ad = gcnew ApiDict();
+	// rules.csvまたはmode.txtファイルが存在するなら一度消す
+	if (PathFileExistsA(rulesPath))
+		DeleteFileA(rulesPath);
+	if (PathFileExistsA(modePath))
+		DeleteFileA(modePath);
+	
+	// mode.txtへモードの状態を0,1,2で書き込む
+	hFileMode = CreateFileA(modePath, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
+	char mode[2];
+	memset(mode, 0, 2);
+	char modelIndex = '0' + comboBoxModeSelection->SelectedIndex;
+	strcat(mode, &modelIndex);
+	strcat(mode, "\n");
+	DWORD writesizeMode;
+	WriteFile(hFileMode, mode, strlen(mode), &writesize, NULL);
+	CloseHandle(hFileMode);
 
-		// rules.csvまたはmode.txtファイルが存在するなら一度消す
-		if (PathFileExistsA(rulesPath) || PathFileExistsA(modePath)) {
-			DeleteFileA(rulesPath);
-			DeleteFileA(modePath);
-		}
+	// rules.csvへWinAPI名とチェック状態の組をcsvに書き込む操作
+	hFileRule = CreateFileA(rulesPath, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 		
-		// mode.txtへモードの状態を0,1,2で書き込む
-		hFileMode = CreateFileA(modePath, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
-		char mode[2];
-		memset(mode, 0, 2);
-		char modelIndex = '0' + comboBoxModeSelection->SelectedIndex;
-		strcat(mode, &modelIndex);
-		strcat(mode, "\n");
-		DWORD writesizeMode;
-		WriteFile(hFileMode, mode, strlen(mode), &writesize, NULL);
-		CloseHandle(hFileMode);
-
-		// rules.csvへWinAPI名とチェック状態の組をcsvに書き込む操作
-		hFileRule = CreateFileA(rulesPath, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
-		
-		for each(TreeNode ^n in treeView->Nodes)
+	for each(TreeNode ^n in treeView->Nodes)
+	{
+		if (n!= nullptr)
 		{
-			if (n!= nullptr)
+			//Using a queue to store and process each node in the TreeView
+			NodeQueue ^staging = gcnew NodeQueue();
+			staging->Enqueue(n);
+			while (staging->Count > 0)
 			{
-				//Using a queue to store and process each node in the TreeView
-				NodeQueue ^staging = gcnew NodeQueue();
-				staging->Enqueue(n);
-				while (staging->Count > 0)
-				{
-					n = staging->Dequeue();
+				n = staging->Dequeue();
 			
-					if (n->Parent) {
-						for each (String ^ s in ad->apiDict[n->Text]) {
-							char buf[100];
-							memset(buf, 0, 100);
-							marshal_context^ context = gcnew marshal_context();
-							const char* apiName = context->marshal_as<const char*>(s);
-							strcat(buf, apiName);
-							strcat(buf, ",");
-							char c = n->Checked + '0';
-							strcat(buf, &c);
-							strcat(buf, "\n");
-							DWORD writesize;
-							WriteFile(hFileRule, buf, strlen(buf), &writesize, NULL);
-							SetFilePointer(hFileRule, 0, NULL, FILE_END);
-						}
+				if (n->Parent) {
+					for each (String ^ s in ad->apiDict[n->Text]) {
+						char buf[100];
+						memset(buf, 0, 100);
+						marshal_context^ context = gcnew marshal_context();
+						const char* apiName = context->marshal_as<const char*>(s);
+						strcat(buf, apiName);
+						strcat(buf, ",");
+						char c = n->Checked + '0';
+						strcat(buf, &c);
+						strcat(buf, "\n");
+						DWORD writesize;
+						WriteFile(hFileRule, buf, strlen(buf), &writesize, NULL);
+						SetFilePointer(hFileRule, 0, NULL, FILE_END);
 					}
+				}
 
-					for each(TreeNode ^node in n->Nodes)
-					{
-						staging->Enqueue(node);
-					}
+				for each(TreeNode ^node in n->Nodes)
+				{
+					staging->Enqueue(node);
 				}
 			}
 		}
-		CloseHandle(hFileRule);
 	}
-
-
+	CloseHandle(hFileRule);
+	
 	msclr::interop::marshal_context context;
-	LPCSTR exePath = context.marshal_as<const char*>(FileSelectTextBox->Text);
+	LPCSTR exePath = context.marshal_as<const char*>("\"" + FileSelectTextBox->Text + "\"");
 	char processPath[MAX_PATH];
-	GetModuleFileNameA(NULL, path, MAX_PATH);
-
-	if (PathFileExistsA(exePath)) {
-		// TODO: このパスの計算をいつか環境変数とかで整理したい
-		//   例) [System.Environment]::SetEnvironmentVariable("SafeExecuteInstallDir", $PSScriptRoot, "Machine")
-		for(int i=0; i<4; i++) PathRemoveFileSpecA(path);
-		SetCurrentDirectoryA(path);
+	
+	char exePathForCheck[MAX_PATH];
+	strcpy_s(exePathForCheck, exePath+1);
+	exePathForCheck[strlen(exePathForCheck)-1] = '\0';
+	
+	if (PathFileExistsA(exePathForCheck)) {
 		char executorPath[MAX_PATH];
-		snprintf(executorPath, MAX_PATH, "%s\\%s", path, "SafeExecutor\\x64\\Debug\\SafeExecutor.exe");
+		snprintf(executorPath, MAX_PATH, "%s\\%s", appDir, "SafeExecutor.exe");
 		char dllPath[MAX_PATH];
-		snprintf(dllPath, MAX_PATH, "%s\\%s", path, "SafeExecute\\x64\\Debug\\SafeExecute.dll");
-
-		if (PathFileExistsA(executorPath) && PathFileExistsA(dllPath)) {
+		snprintf(dllPath, MAX_PATH, "\"%s\\%s\"", appDir, "SafeExecute.dll");
+		
+		char dllPathForCheck[MAX_PATH];
+		strcpy_s(dllPathForCheck, dllPath + 1);
+		dllPathForCheck[strlen(dllPathForCheck) - 1] = '\0';
+		
+		if (PathFileExistsA(executorPath) && PathFileExistsA(dllPathForCheck)) {
 			char arg[MAX_PATH * 10];
 			memset(arg, 0, sizeof(arg));
 			strcat_s(arg, dllPath);
@@ -641,7 +654,7 @@ private: System::Void ExecBtn_Click(System::Object^ sender, System::EventArgs^ e
 			pProc->StartInfo->RedirectStandardError = true;
 			// pProc->StartInfo->RedirectStandardInput = true;
 			pProc->Start();
-
+			
 			String^ stdOut = "";
 			String^ stdErr = "";
 			while (!pProc->HasExited) {

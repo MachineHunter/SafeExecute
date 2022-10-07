@@ -9,7 +9,7 @@ bool IsNumber(const string& s) {
 
 void ReadCheckList() {
 	char path[MAX_PATH];
-	GetCurrentDirectoryA(MAX_PATH, path);
+	strcpy_s(path, localDir);
 	strcat_s(path, "\\rules");
 
 	if (PathFileExistsA(path)) {
