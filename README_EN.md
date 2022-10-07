@@ -1,9 +1,9 @@
-# SafeExecute Samurai (English Version)
+# SafeExecute Samurai (English Introduction)
 
 ## Summary
 ### SafeExecute Samurai is an software checker that Restrict and Visualize application execution.
-SafeExecute provides safe execution to some unknown executable files and notify users with major Windows API calls used in some malware during their runtime. 
-User is able to either continue it or interrupt it when any hook occurs. It's also possible to learn what API has been used on any applications you want to test with SafeExecute!
+SafeExecute Samurai provides safe execution to some unknown executable files and notify users with major Windows API calls used in some malware during their runtime. 
+User is able to either continue it or interrupt it when any hook occurs. It's also possible to learn what API has been used on any applications you want to test with SafeExecute Samurai!
 
 > **Note**   **English GUI Interface is not yet implemented!**
 
@@ -56,7 +56,7 @@ After selecting echo.exe, you need to put the argument in the arguments section.
 * Understand Program Content
 * User-Friendly Suggestion System
 
-Compared to Anti-Malware or Anti-Virus system which often scan and detect executables in your computer, SafeExecute is a portable tool that does dynamic detection without using any dataset and Internet to support its functioning. For instance, Anti-Malware software may able to erase files when detect something malicious, however, the software does not tell the reason being suspicious, so if user wants to learn more about some malicious files, SafeExecute is the best choice that protect user by assisting user during the execution and provide an option to interrupt the target executables when found suspicious Windows API being called, also they can decide whether to continue or not by themselves, without any third-party's suggestions or judgements.
+Compared to Anti-Malware or Anti-Virus system which often scan and detect executables in your computer, SafeExecute Samurai is a portable tool that does dynamic detection without using any dataset and Internet to support its functioning. For instance, Anti-Malware software may able to erase files when detect something malicious, however, the software does not tell the reason being suspicious, so if user wants to learn more about some malicious files, SafeExecute Samurai is the best choice that protect user by assisting user during the execution and provide an option to interrupt the target executables when found suspicious Windows API being called, also they can decide whether to continue or not by themselves, without any third-party's suggestions or judgements.
 It's also a good tool for experienced researchers and programmers to investigate Windows executables!
 
 
@@ -64,15 +64,15 @@ It's also a good tool for experienced researchers and programmers to investigate
 
 
 ## Important Files
-* SafeExecute's Directory
+* SafeExecute Samurai's Directory
     * **SafeExecute.dll**: Contains our hook methods, Windows API will be detected by our code and will not execute without the user's confirmation.
     * **SafeExecutor.exe**: A program combining hook methods and target executables with arguments, we can consider it as an input machine. Users can just use "SafeExecutorGUI.exe" when using!
-    * **SafeExecutorGUI.exe**: GUI interface for SafeExecute.
+    * **SafeExecutorGUI.exe**: GUI interface for SafeExecute Samurai.
 
 * User Setting Directory (`C:\Users\<username>\AppData\Local\安全実行侍～俺を信じろ～`)
     * **logs/logs.csv**: Recorded execution results of every use.
     * **rules/mode.txt**: For command line users, `0` for normal mode, `1` for debug mode, `2` for interactive mode which is suggested. 
-    * **rules/rules.csv**: For command line users, it shows every Windows API that can be hooked by SafeExecute. `1` for turn-on mode, `0` for turn-off mode.
+    * **rules/rules.csv**: For command line users, it shows every Windows API that can be hooked by SafeExecute Samurai. `1` for turn-on mode, `0` for turn-off mode.
 
 
 <br/>
@@ -80,7 +80,7 @@ It's also a good tool for experienced researchers and programmers to investigate
 ## About Github Repository
 
 * [Issues](https://github.com/MachineHunter/SafeExecute/issues): Our contributors' work are in this section, including completed work and works in progress.
-* [Discussions](https://github.com/MachineHunter/SafeExecute/discussions): Our meetings for developing SafeExecute application.
+* [Discussions](https://github.com/MachineHunter/SafeExecute/discussions): Our meetings for developing SafeExecute Samurai application.
 * [Wiki](https://github.com/MachineHunter/SafeExecute/wiki) : We prepared wiki pages for various presentations.
 	* [安全実行侍の仕組み (SafeExecute Samurai's structure)](https://github.com/MachineHunter/SafeExecute/wiki/%E5%AE%89%E5%85%A8%E5%AE%9F%E8%A1%8C%E4%BE%8D%EF%BD%9E%E4%BF%BA%E3%82%92%E4%BF%A1%E3%81%98%E3%82%8D%EF%BD%9E(SafeExecute)%E3%81%AE%E4%BB%95%E7%B5%84%E3%81%BF)
 	* [検知するWindowsAPIを追加実装する方法 (How to expand our contribution and add new Windows API hook in SafeExecute Samurai)](https://github.com/MachineHunter/SafeExecute/wiki/%E6%A4%9C%E7%9F%A5%E3%81%99%E3%82%8BWindowsAPI%E3%82%92%E8%BF%BD%E5%8A%A0%E5%AE%9F%E8%A3%85%E3%81%99%E3%82%8B%E6%96%B9%E6%B3%95)
@@ -131,7 +131,7 @@ And here is the part when we reject its execution, nothing happened to our files
 
 
 ## Behind the Scenes
-SafeExecute uses an API hook to monitor target executable. Users are able to decide whether to continue or not when SafeExecute hooks any Windows API user select.
+SafeExecute Samurai uses an API hook to monitor target executable. Users are able to decide whether to continue or not when SafeExecute Samurai hooks any Windows API user select.
 About how we produced this technique, here is an example code we programmed similar to our released code. Let's see through this example executable "hello.exe":
 
 ```c++
@@ -148,15 +148,15 @@ This program is really simple. It'll show a message box by calling Windows API "
 
 ![](./img/callMessageBoxA.png)
 
-About what we try to do in SafeExecute is that instead of getting the real "MessageBoxA", we covered the address of "MessageBoxA_Hook" ,which is our contribution in SafeExecute.dll, over the address of "MessageBoxA". The process during runtime will become like the image below.
+About what we try to do in SafeExecute Samurai is that instead of getting the real "MessageBoxA", we covered the address of "MessageBoxA_Hook" ,which is our contribution in SafeExecute.dll, over the address of "MessageBoxA". The process during runtime will become like the image below.
 
 ![](./img/callHookedMessageBoxA.png)
 
-You may somehow wonder what is inside "MessageBoxA_Hook", before calling the real "MessageBoxA" we added a message box that contains "yes" and "no" with some knowledge about the function calls being hooked, in that case users can figure out whether to continue or not by themselves, without any third-party's suggestions or judgements. If the user chooses not to continue, SafeExecute will easily call "ExitProcess" at that moment and end the process.
+You may somehow wonder what is inside "MessageBoxA_Hook", before calling the real "MessageBoxA" we added a message box that contains "yes" and "no" with some knowledge about the function calls being hooked, in that case users can figure out whether to continue or not by themselves, without any third-party's suggestions or judgements. If the user chooses not to continue, SafeExecute Samurai will easily call "ExitProcess" at that moment and end the process.
 
-In many cases, SafeExecute will hook out many Windows APIs because of the wide variety of functionalities in a program or executable. You can still continue running by clicking "yes" every time a hook pops up, to make it personalize we also added a checklist which users can choose what kind of Windows API should be hooked, and the others will not.
+In many cases, SafeExecute Samurai will hook out many Windows APIs because of the wide variety of functionalities in a program or executable. You can still continue running by clicking "yes" every time a hook pops up, to make it personalize we also added a checklist which users can choose what kind of Windows API should be hooked, and the others will not.
 
-I hope you enjoy using SafeExecute. Good Luck!
+I hope you enjoy using SafeExecute Samurai. Good Luck!
 
 
 
