@@ -1,5 +1,19 @@
 # 安全実行侍 ～俺を信じろ～
 
+## 目次
+1. [概要](#summary)
+1. [特徴](#feature)
+1. [インストール方法](#install)
+1. [使用方法](#howto)
+	1. [GUIで使う場合](#howto-gui)
+	1. [CUIで使う場合](#howto-cui)
+	1. [ログファイル、設定ファイル、バックアップファイルの保存先](#save-files)
+1. [リポジトリの道案内](#repository)
+1. [主な構成要素](#elements)
+1. [仕組み](#implement)
+
+
+<a id="summary"></a>
 ## 概要
 
 **安全実行侍 ～俺を信じろ～（以下、安全実行侍）** は、実行ファイルの禁止したい挙動を選択することで、不安な実行ファイルを安全に実行することができるツールです。<br>
@@ -27,6 +41,7 @@
 
 検知対象となる挙動の検知は、各WindowsAPIの実行の検知として実装されています。
 
+<a id="feature"></a>
 ## 特徴
 
 安全実行侍の特徴は主に以下の2点です。
@@ -38,22 +53,25 @@
 
 2.については、簡単な設定を行う事で、実行ファイルのどの挙動が検知されて停止したのか(停止するかを確認されているのか)を表示させることができます。これにより、実行ファイルの挙動の把握や、検知対象とする挙動の再検討を行うことができます。
 
+<a id="install"></a>
 ## インストール方法
 
 安全実行侍は、Releasesでプリビルドバイナリとして配布しています。
 
-1. Releaseからzipでダウンロードしてください。
+1. Releaseから、[latest released](https://github.com/MachineHunter/SafeExecute/releases)をzipでダウンロードしてください。
 1. ダウンロード後、zipファイルをローカルで解凍してください。
 1. 解凍後、**SafeExecutorGUI.exe**を実行すると、安全実行侍が起動します。
 
 ログファイルや設定ファイルは、**C:\Users\UserName\AppData\Local\安全実行侍～俺を信じろ～**以下に作られます。
 
+<a id="howto"></a>
 ## 使用方法
 
 安全実行侍は、使用方法としてGUI、CUIの両方に対応しています。
 
 ※ アンチウィルスソフトに安全実行侍の実行を止められる場合があります。
 
+<a id="howto-gui"></a>
 ### GUIで使う場合
 
 1. 「安全実行侍～俺を信じろ～.exe」を実行すると、安全実行侍のウィンドウが起動します。
@@ -69,8 +87,23 @@
 ![](./img/WindowExplain.PNG)
 
 #### 実行の様子
-// TODO：gifを挿入する //
 
+安全実行侍の実行例を説明します。
+
+##### 例：インターネット接続を行うプログラムの検知
+
+この例は、GithubのURLを開こうとするプログラムを実行します。<br>
+ただこのプログラムを実行するだけではネットワーク接続しているかは分かりませんが、安全実行侍を使うと、このプログラムがネットワーク接続を試みていることがわかります。<br>
+以下では、実行を継続するかを聞かれ、「はい」を選択し、実行を継続した場合です。
+
+![](./img/InternetExample01.gif)
+
+一方、「いいえ」を選択すると、ネットワーク接続を行わずに停止します。
+
+![](./img/InternetExample02.gif)
+
+
+<a id="howto-cui"></a>
 ### CUIで使う場合
 
 #### リリースから実行する場合
@@ -94,6 +127,7 @@
 <SafeExecutor.exeのパス> <SafeExecute.dllのパス> <実行ファイルのパス>
 ```
 
+<a id="save-files"></a>
 ### ログファイル、設定ファイル、バックアップファイルの保存先
 
 * 安全実行侍で実行した結果のログは、**C:\Users\UserName\AppData\Local\安全実行侍～俺を信じろ～\logs\log.csv**に保存されます。
@@ -113,30 +147,33 @@
 * バックアップファイルは、**C:\Users\UserName\AppData\Local\安全実行侍～俺を信じろ～\backups**以下に保存されます。<br>
 具体的には、上記のbackupsディレクトリ以下に、実行した実行ファイル名のディレクトリが作成され、そのディレクトリの中に実行に関わるファイルのバックアップが保存されます。
 
+<a id="repository"></a>
 ## リポジトリの道案内
 
-* **Issues**：Contributorが過去に行った作業、対応中のタスクなどが確認できます
-* **Discussions**：開発中のミーティングの内容が確認できます
-* **Wiki**：以下のような様々なドキュメントを整備しています
+* [Issues](https://github.com/MachineHunter/SafeExecute/issues)：Contributorが過去に行った作業、対応中のタスクなどが確認できます
+* [Discussions](https://github.com/MachineHunter/SafeExecute/discussions)：開発中のミーティングの内容が確認できます
+* [Wiki](https://github.com/MachineHunter/SafeExecute/wiki)：以下のような様々なドキュメントを整備しています
 	* 安全実行侍の仕組み
 	* 検知するWindowsAPIを追加実装する方法
 	* 安全実行侍のGUIの追加実装方法
 	* 安全実行侍の、通常アプリを用いた評価結果
 	* マルウェア調査
-* **branch**：
-	* release-1.0：Release v1.0時の内容
-	* release-test：テストリリース時の内容
+* [branch](https://github.com/MachineHunter/SafeExecute)：
+	* [release-test](https://github.com/MachineHunter/SafeExecute/tree/release-test)：テストリリース時の内容
+	* [release-1.0](https://github.com/MachineHunter/SafeExecute/tree/release-1.0)：Release v1.0時の内容
 
+<a id="elements"></a>
 ## 主な構成要素
 
-* **SafeExecute**：検知を実施する実行ファイルのWindowsAPIをフックし、挙動の監視、指定した挙動の検知及びその対応を行う
-* **SafeExecutor**：検知を実施する実行ファイルにSafeExecuteを組み込んで実行する
-* **SafeExecutorGUI**：GUIの実装
-* **TestExecutables**：テスト用のソースプログラム、実行ファイルなどが含まれる
-* **backups**：安全実行侍は、実行ファイルが読み書きするファイルを全てバックアップする機能があり、backupsディレクトリにバックアップしたファイルを格納する
-* **logs**：安全実行侍は、いつどのような実行ファイルで何のWindowsAPIをフックしたかをログとして残す機能があり、logsディレクトリ内にlog.csvとして保存される
-* **rules**：安全実行侍の「実行に制限をかける項目」と「モード選択」の設定を保持するファイルを含む
+* [SafeExecute](https://github.com/MachineHunter/SafeExecute/tree/master/SafeExecute)：検知を実施する実行ファイルのWindowsAPIをフックし、挙動の監視、指定した挙動の検知及びその対応を行う
+* [SafeExecutor](https://github.com/MachineHunter/SafeExecute/tree/master/SafeExecutor)：検知を実施する実行ファイルにSafeExecuteを組み込んで実行する
+* [SafeExecutorGUI](https://github.com/MachineHunter/SafeExecute/tree/master/SafeExecutorGUI)：GUIの実装
+* [TestExecutables](https://github.com/MachineHunter/SafeExecute/tree/master/TestExecutables)：テスト用のソースプログラム、実行ファイルなどが含まれる
+* [backups](https://github.com/MachineHunter/SafeExecute/tree/master/backups)：安全実行侍は、実行ファイルが読み書きするファイルを全てバックアップする機能があり、backupsディレクトリにバックアップしたファイルを格納する
+* [logs](https://github.com/MachineHunter/SafeExecute/tree/master/logs)：安全実行侍は、いつどのような実行ファイルで何のWindowsAPIをフックしたかをログとして残す機能があり、logsディレクトリ内にlog.csvとして保存される
+* [rules](https://github.com/MachineHunter/SafeExecute/tree/master/rules)：安全実行侍の「実行に制限をかける項目」と「モード選択」の設定を保持するファイルを含む
 
+<a id="implement"></a>
 ## 仕組み
 
 安全実行侍は、検知を実施する実行ファイルのWindowsAPIを監視することで、その実行ファイルの挙動が怪しいかどうかを判断します。
