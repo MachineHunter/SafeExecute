@@ -25,6 +25,7 @@ It's also a good tool for experienced researchers and programmers to investigate
   2. You can choose to install it on local computer.
   3. After installing, you can check if this certificate is in the list by opening "certmgr. msc" from Windows Search Engine beside your Windows icon. (Default is at left bottom of your screen)
   4. Double click ".appxbunldle" file and start install SafeExecute.
+* Click on the MSI installer file and follow the steps
 
 ## How to...
 1. Open "SafeExecutorGUI.exe"
@@ -52,18 +53,20 @@ After selecting echo.exe, you need to put the argument in the arguments section.
 
 ## Showcase
 Here is an example of executing a program that wants to open a url of Github. And we tried to allow all the APIs by clicking "yes".
+As we can see, when we run this malicious application, it showed a warning about it's attemping to open a url by Windows API InternetOpenUrl and also its destination.
 
 ![](./img/InternetExample01.gif)
 
-And here is the part when we reject its execution.
+And here is the part when we reject its execution, the process stopped before Windows API call.
 
 ![](./img/InternetExample02.gif)
 
 Here is an example of executing a fake ransomware we made that tries to encrypt all the ".txt" files in the path of input argument. And we all the APIs by clicking "yes".
+As we can see, there are many pop up messages showing Windows API methods such as Encrypting, File Iteration, and Write Files, and there are also further information around these Windows API calls. Users can easily see what's happening and decide whether to continue or not before anything changes.
 
 ![](./img/FakeRansom01.gif)
 
-And here is the part when we reject its execution.
+And here is the part when we reject its execution, nothing happened to our files. Saved the day!
 
 ![](./img/FakeRansom02.gif)
 
