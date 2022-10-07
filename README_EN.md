@@ -82,15 +82,16 @@ It's also a good tool for experienced researchers and programmers to investigate
 * [Issues](https://github.com/MachineHunter/SafeExecute/issues): Our contributors' work are in this section, including completed work and works in progress.
 * [Discussions](https://github.com/MachineHunter/SafeExecute/discussions): Our meetings for developing SafeExecute application.
 * [Wiki](https://github.com/MachineHunter/SafeExecute/wiki) : We prepared wiki pages for various presentations.
-	* 安全実行侍の仕組み (SafeExecute Samurai's structure)
-	* 検知するWindowsAPIを追加実装する方法 (How to expand our contribution and add new Windows API hook in SafeExecute Samurai)
-	* 安全実行侍のGUIの追加実装方法 (How to expand SafeExecute Samurai's GUI interface)
-	* 安全実行侍の、通常アプリを用いた評価結果 (Evaluate Regular Applications with SafeExecute Samurai)
-	* マルウェア調査 (Malware Research)
+	* [安全実行侍の仕組み (SafeExecute Samurai's structure)](https://github.com/MachineHunter/SafeExecute/wiki/%E5%AE%89%E5%85%A8%E5%AE%9F%E8%A1%8C%E4%BE%8D%EF%BD%9E%E4%BF%BA%E3%82%92%E4%BF%A1%E3%81%98%E3%82%8D%EF%BD%9E(SafeExecute)%E3%81%AE%E4%BB%95%E7%B5%84%E3%81%BF)
+	* [検知するWindowsAPIを追加実装する方法 (How to expand our contribution and add new Windows API hook in SafeExecute Samurai)](https://github.com/MachineHunter/SafeExecute/wiki/%E6%A4%9C%E7%9F%A5%E3%81%99%E3%82%8BWindowsAPI%E3%82%92%E8%BF%BD%E5%8A%A0%E5%AE%9F%E8%A3%85%E3%81%99%E3%82%8B%E6%96%B9%E6%B3%95)
+	* [安全実行侍のGUIの追加実装方法 (How to expand SafeExecute Samurai's GUI interface)](https://github.com/MachineHunter/SafeExecute/wiki/SafeExecutorGUI(%E5%AE%89%E5%85%A8%E5%AE%9F%E8%A1%8C%E4%BE%8D%EF%BD%9E%E4%BF%BA%E3%82%92%E4%BF%A1%E3%81%98%E3%82%8D%EF%BD%9E)%E3%81%AE%E8%BF%BD%E5%8A%A0%E5%AE%9F%E8%A3%85%E6%96%B9%E6%B3%95)
+	* [安全実行侍の、通常アプリを用いた評価結果 (Evaluate Regular Applications with SafeExecute Samurai)](https://github.com/MachineHunter/SafeExecute/wiki/%E9%80%9A%E5%B8%B8%E3%82%A2%E3%83%97%E3%83%AA%E3%81%AE%E8%A9%95%E4%BE%A1)
+	* [マルウェア調査 (Malware Research)](https://github.com/MachineHunter/SafeExecute/wiki/%E3%83%9E%E3%83%AB%E3%82%A6%E3%82%A7%E3%82%A2%E8%AA%BF%E6%9F%BB)
 * [branch](https://github.com/MachineHunter/SafeExecute)
 	* [release-1.0](https://github.com/MachineHunter/SafeExecute/tree/release-1.0): Release v1.0
 	* [release-test](https://github.com/MachineHunter/SafeExecute/tree/release-test): Test Release
 
+<br/>
 
 ## Showcase
 
