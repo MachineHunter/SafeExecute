@@ -77,6 +77,20 @@ It's also a good tool for experienced researchers and programmers to investigate
 
 <br/>
 
+## About Github Repository
+
+* [Issues](https://github.com/MachineHunter/SafeExecute/issues): Our contributors' work are in this section, including completed work and works in progress.
+* [Discussions](https://github.com/MachineHunter/SafeExecute/discussions): Our meetings for developing SafeExecute application.
+* [Wiki](https://github.com/MachineHunter/SafeExecute/wiki) : We prepared wiki pages for various presentations.
+	* 安全実行侍の仕組み (SafeExecute Samurai's structure)
+	* 検知するWindowsAPIを追加実装する方法 (How to expand our contribution and add new Windows API hook in SafeExecute Samurai)
+	* 安全実行侍のGUIの追加実装方法 (How to expand SafeExecute Samurai's GUI interface)
+	* 安全実行侍の、通常アプリを用いた評価結果 (Evaluate Regular Applications with SafeExecute Samurai)
+	* マルウェア調査 (Malware Research)
+* [branch](https://github.com/MachineHunter/SafeExecute)
+	* [release-1.0](https://github.com/MachineHunter/SafeExecute/tree/release-1.0): Release v1.0
+	* [release-test](https://github.com/MachineHunter/SafeExecute/tree/release-test): Test Release
+
 
 ## Showcase
 
