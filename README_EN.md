@@ -18,14 +18,9 @@ User is able to either continue it or interrupt it when any hook occurs. It's al
 Compared to Anti-Malware or Anti-Virus system which often scan and detect executables in your computer, SafeExecute is a portable tool that does dynamic detection without using any dataset and Internet to support its functioning. For instance, Anti-Malware software may able to erase files when detect something malicious, however, the software does not tell the reason being suspicious, so if user wants to learn more about some malicious files, SafeExecute is the best choice that protect user by assisting user during the execution and provide an option to interrupt the target executables when found suspicious Windows API being called, also they can decide whether to continue or not by themselves, without any third-party's suggestions or judgements.
 It's also a good tool for experienced researchers and programmers to investigate Windows executables!
 
-## Installation(For people who don't have Visual Studio developing environment)
-* If you already have Visual Studio in your computer, just open "SafeExecutorGUI.exe".
-* If you don't have Visual Studio in your computer, please follow the steps below to open it with MSIX package. We need users to add Reliable Creator to your computer manually.
-  1. Right click ".crt" file and choose **Install Certificate**.
-  2. You can choose to install it on local computer.
-  3. After installing, you can check if this certificate is in the list by opening "certmgr. msc" from Windows Search Engine beside your Windows icon. (Default is at left bottom of your screen)
-  4. Double click ".appxbunldle" file and start install SafeExecute.
-* Click on the MSI installer file and follow the steps
+## Installation
+1. Unzip our latest released ".zip" file.
+2. Start "SafeExecutorGUI.exe"
 
 ## How to...
 1. Open "SafeExecutorGUI.exe"
@@ -42,9 +37,15 @@ echo.exe "arg1"
 After selecting echo.exe, you need to put the argument in the arguments section.
 
 ## Important Files
-* **SafeExecute.dll**: Contains our hook methods, Windows API will be detected by our code and will not execute without the user's confirmation.
-* **SafeExecutor.exe**: A program combining hook methods and target executables with arguments, we can consider it as an input machine. Users can just use "SafeExecutorGUI.exe" when using!
-* **SafeExecutorGUI.exe**: GUI interface for SafeExecute.
+* SafeExecute's Directory
+    * **SafeExecute.dll**: Contains our hook methods, Windows API will be detected by our code and will not execute without the user's confirmation.
+    * **SafeExecutor.exe**: A program combining hook methods and target executables with arguments, we can consider it as an input machine. Users can just use "SafeExecutorGUI.exe" when using!
+    * **SafeExecutorGUI.exe**: GUI interface for SafeExecute.
+
+* User Setting Directory (C:\Users\<username>\AppData\Local\安全実行侍～俺を信じろ～)
+    * **logs/logs.csv**: Recorded execution results of every use.
+    * **rules/mode.txt**: For command line users, 0 for normal mode, 1 for debug mode, 2 for interactive mode which is suggested. 
+    * **rules/rules.csv**: For command line users, it shows every Windows API that can be hooked by SafeExecute. 1 for turn-on mode, 0 for turn-off mode.
 
 ## Command Line Usage
 ```sh
