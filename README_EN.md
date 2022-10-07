@@ -1,12 +1,39 @@
-# SafeExecute (English Version)
+# SafeExecute Samurai (English Version)
 
 ## Summary
-### SafeExecute is an executable checker that will detect any Windows API calls during runtime.
-In detail, we implement our API hooking code into a dll file called "SafeExecute.dll". When users provide their executables, SafeExecute will run it with a dll file which changes the behavior of the target executable into multiple confirmation messages when any chosen Windows API is called.
+### SafeExecute Samurai is an software checker that Restrict and Visualize application execution.
+SafeExecute provides safe execution to some unknown executable files and notify users with major Windows API calls used in some malware during their runtime. 
+User is able to either continue it or interrupt it when any hook occurs. It's also possible to learn what API has been used on any applications you want to test with SafeExecute!
+
+<span style=“color:green;”> text goes here</span>
+### English GUI Interface is not yet implemented!
+
+## Installation
+1. Unzip our [latest released](https://github.com/MachineHunter/SafeExecute/releases) ".zip" file.
+2. Start "SafeExecutorGUI.exe"
 
 ## Usage
-### SafeExecute provides safe execution to some unknown executable files and notify users with all of the Windows API calls during their runtime. 
-User is able to either continue it or interrupt it when any hook occurs. It's also possible to learn what API has been used on any applications you want to test with SafeExecute!
+
+![](./img/GUI_example.png)
+
+1. Open "SafeExecutorGUI.exe"
+2. Select your target executable file. If any argument is needed, you can input them in the second line. In the (1) part of above image.
+4. Choose Mode. There are Normal mode with stdout, Error mode with stderr, and Interactive mode with messagebox showing, Interactive mode is suggested.
+5. Click on the Windows API type you interested in.
+6. Click "Run" and start!
+
+<details>
+   <summary>what is argument?</summary>
+   
+For example:
+```sh
+echo.exe "arg1"
+```
+After selecting echo.exe, you need to put the argument in the arguments section.
+</details>
+
+
+
 
 ## Features
 * Runtime Analysis
@@ -17,24 +44,6 @@ User is able to either continue it or interrupt it when any hook occurs. It's al
 
 Compared to Anti-Malware or Anti-Virus system which often scan and detect executables in your computer, SafeExecute is a portable tool that does dynamic detection without using any dataset and Internet to support its functioning. For instance, Anti-Malware software may able to erase files when detect something malicious, however, the software does not tell the reason being suspicious, so if user wants to learn more about some malicious files, SafeExecute is the best choice that protect user by assisting user during the execution and provide an option to interrupt the target executables when found suspicious Windows API being called, also they can decide whether to continue or not by themselves, without any third-party's suggestions or judgements.
 It's also a good tool for experienced researchers and programmers to investigate Windows executables!
-
-## Installation
-1. Unzip our latest released ".zip" file.
-2. Start "SafeExecutorGUI.exe"
-
-## How to...
-1. Open "SafeExecutorGUI.exe"
-2. Select your target executable file.
-3. If any argument is needed, you can input them in the second line.
-4. Choose Mode. There are Normal mode with stdout, Error mode with stderr, and Interactive mode with messagebox showing, Interactive mode is suggested.
-5. Click on the Windows API type you interested in.
-6. Click "Run" and start!
-
-For example:
-```sh
-echo.exe "arg1"
-```
-After selecting echo.exe, you need to put the argument in the arguments section.
 
 ## Important Files
 * SafeExecute's Directory
