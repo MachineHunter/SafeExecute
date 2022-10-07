@@ -5,14 +5,23 @@
 SafeExecute provides safe execution to some unknown executable files and notify users with major Windows API calls used in some malware during their runtime. 
 User is able to either continue it or interrupt it when any hook occurs. It's also possible to learn what API has been used on any applications you want to test with SafeExecute!
 
-<span style=“color:green;”> text goes here</span>
-### English GUI Interface is not yet implemented!
+> **Note**   **English GUI Interface is not yet implemented!**
+
+
+<br/>
+
 
 ## Installation
 1. Unzip our [latest released](https://github.com/MachineHunter/SafeExecute/releases) ".zip" file.
 2. Start "SafeExecutorGUI.exe"
 
+
+<br/>
+
+
 ## Usage
+
+### GUI Usage
 
 ![](./img/GUI_example.png)
 
@@ -23,7 +32,7 @@ User is able to either continue it or interrupt it when any hook occurs. It's al
 6. Click "Run" and start!
 
 <details>
-   <summary>what is argument?</summary>
+   <summary>What is argument?</summary>
    
 For example:
 ```sh
@@ -32,7 +41,12 @@ echo.exe "arg1"
 After selecting echo.exe, you need to put the argument in the arguments section.
 </details>
 
+### Command Line Usage
+```sh
+./SafeExecutor.exe SafeExecute.dll <path-to-executables> <arguments>
+```
 
+<br/>
 
 
 ## Features
@@ -45,25 +59,34 @@ After selecting echo.exe, you need to put the argument in the arguments section.
 Compared to Anti-Malware or Anti-Virus system which often scan and detect executables in your computer, SafeExecute is a portable tool that does dynamic detection without using any dataset and Internet to support its functioning. For instance, Anti-Malware software may able to erase files when detect something malicious, however, the software does not tell the reason being suspicious, so if user wants to learn more about some malicious files, SafeExecute is the best choice that protect user by assisting user during the execution and provide an option to interrupt the target executables when found suspicious Windows API being called, also they can decide whether to continue or not by themselves, without any third-party's suggestions or judgements.
 It's also a good tool for experienced researchers and programmers to investigate Windows executables!
 
+
+<br/>
+
+
 ## Important Files
 * SafeExecute's Directory
     * **SafeExecute.dll**: Contains our hook methods, Windows API will be detected by our code and will not execute without the user's confirmation.
     * **SafeExecutor.exe**: A program combining hook methods and target executables with arguments, we can consider it as an input machine. Users can just use "SafeExecutorGUI.exe" when using!
     * **SafeExecutorGUI.exe**: GUI interface for SafeExecute.
 
-* User Setting Directory (C:\Users\<username>\AppData\Local\安全実行侍～俺を信じろ～)
+* User Setting Directory (`C:\Users\<username>\AppData\Local\安全実行侍～俺を信じろ～`)
     * **logs/logs.csv**: Recorded execution results of every use.
-    * **rules/mode.txt**: For command line users, 0 for normal mode, 1 for debug mode, 2 for interactive mode which is suggested. 
-    * **rules/rules.csv**: For command line users, it shows every Windows API that can be hooked by SafeExecute. 1 for turn-on mode, 0 for turn-off mode.
+    * **rules/mode.txt**: For command line users, `0` for normal mode, `1` for debug mode, `2` for interactive mode which is suggested. 
+    * **rules/rules.csv**: For command line users, it shows every Windows API that can be hooked by SafeExecute. `1` for turn-on mode, `0` for turn-off mode.
 
-## Command Line Usage
-```sh
-./SafeExecutor.exe SafeExecute.dll <path-to-executables>
-```
+
+<br/>
+
 
 ## Showcase
-Here is an example of executing a program that wants to open a url of Github. And we tried to allow all the APIs by clicking "yes".
-As we can see, when we run this malicious application, it showed a warning about it's attemping to open a url by Windows API InternetOpenUrl and also its destination.
+
+### Example1 (Internet Connection Detection)
+
+Here is an example of executing a program that wants to open a url of Github.
+Normaly, we are not able to see where executables are trying to connect.
+But by using SafeExecute Samurai, as we can see, where executables are trying to connect is visible.
+
+
 
 ![](./img/InternetExample01.gif)
 
@@ -71,14 +94,26 @@ And here is the part when we reject its execution, the process stopped before Wi
 
 ![](./img/InternetExample02.gif)
 
-Here is an example of executing a fake ransomware we made that tries to encrypt all the ".txt" files in the path of input argument. And we all the APIs by clicking "yes".
-As we can see, there are many pop up messages showing Windows API methods such as Encrypting, File Iteration, and Write Files, and there are also further information around these Windows API calls. Users can easily see what's happening and decide whether to continue or not before anything changes.
+
+<br/>
+
+
+### Example2 (Pseudo Ransomware Detection)
+
+Here is an example of executing a fake ransomware we made that tries to encrypt all the ".txt" files in the path given to argument.
+Normally, when we execute a malicious ransomware-like software, everything has changed when user run this program, for example files being encrypted. But if user execute this program with our SafeExecute Samurai, he/she can easily see information like Encryption function called and decide to stop it before any destruction. 
+
+As we can see, there are many pop up messages showing Windows API methods such as Encrypting, File Iteration, and Write Files, there are also further information around these function calls. In detail, we implement this fake ransomware program to traverse target directory and find ".txt" files to encrypt, what leads to the amount of pop up messages because it uses APIs to do file iteration, encryption, and file writing.
 
 ![](./img/FakeRansom01.gif)
 
-And here is the part when we reject its execution, nothing happened to our files. Saved the day!
+And here is the part when we reject its execution, nothing happened to our files and saved the day!
 
 ![](./img/FakeRansom02.gif)
+
+
+<br/>
+
 
 ## Behind the Scenes
 SafeExecute uses an API hook to monitor target executable. Users are able to decide whether to continue or not when SafeExecute hooks any Windows API user select.
