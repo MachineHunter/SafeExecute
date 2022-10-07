@@ -23,7 +23,7 @@ User is able to either continue it or interrupt it when any hook occurs. It's al
 
 ### GUI Usage
 
-![](./img/GUI_example.png)
+![](./img/GUI_example_en.png)
 
 1. Open "SafeExecutorGUI.exe"
 2. Select your target executable file. If any argument is needed, you can input them in the second line. In the (1) part of above image.
